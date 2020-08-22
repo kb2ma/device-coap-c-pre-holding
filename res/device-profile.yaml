@@ -1,0 +1,21 @@
+name: "Coap-Device"
+manufacturer: "Open Sourcery"
+model: "1"
+labels:
+ - "coap"
+ - "rest"
+description: "device sends int value asynchronously"
+
+deviceResources:
+  - name: int
+    description: "Int32 value"
+    properties:
+      value:
+        { type: "Int32", readWrite: "W" }
+      units:
+        { type: "String", readWrite: "R"}
+
+deviceCommands:
+  - name: int
+    get:
+      - { operation: "get", deviceResource: "int"}
