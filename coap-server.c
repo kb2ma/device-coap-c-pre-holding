@@ -7,6 +7,7 @@
  */
 
 #include <errno.h>
+#include <signal.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -26,6 +27,16 @@
 #define MSG_PAYLOAD_INVALID "payload not valid"
 
 static coap_driver *sdk_ctx;
+
+/* controls input loop */
+static int quit = 0;
+
+/* signal handler for input loop */
+static void
+handle_sig(int signum) {
+  (void)signum;
+  quit = 1;
+}
 
 static int
 resolve_address(const char *host, const char *service, coap_address_t *dst) {
@@ -139,6 +150,10 @@ parse_path(coap_pdu_t *request, devsdk_devices **device_ptr, devsdk_device_resou
     *device_ptr = device;
     *resource_ptr = resource;
   }
+  else if (device)
+  {
+    devsdk_free_devices (device);
+  }
   return res;
 }
 
@@ -167,7 +182,7 @@ data_handler(coap_context_t *context, coap_resource_t *coap_resource,
   if (!parse_path (request, &device, &resource))
   {
     response->code = COAP_RESPONSE_CODE(404);
-    return;
+    goto finish;
   }
 
   /* only int32 supported at present */
@@ -176,7 +191,7 @@ data_handler(coap_context_t *context, coap_resource_t *coap_resource,
   {
     iot_log_warn (sdk_ctx->lc, "unsupported resource type %d", resource_type);
     response->code = COAP_RESPONSE_CODE(500);
-    return;
+    goto finish;
   }
 
   /* read data */
@@ -187,7 +202,7 @@ data_handler(coap_context_t *context, coap_resource_t *coap_resource,
     iot_log_info (sdk_ctx->lc, "invalid data of len %u", len);
     response->code = COAP_RESPONSE_CODE(400);
     coap_add_data(response, strlen(MSG_PAYLOAD_INVALID), (uint8_t *)MSG_PAYLOAD_INVALID);
-    return;
+    goto finish;
   }
 
   /* data conversion requires a null terminated string */
@@ -204,7 +219,7 @@ data_handler(coap_context_t *context, coap_resource_t *coap_resource,
     iot_log_info (sdk_ctx->lc, "invalid data of len %u", len);
     response->code = COAP_RESPONSE_CODE(400);
     coap_add_data(response, strlen(MSG_PAYLOAD_INVALID), (uint8_t *)MSG_PAYLOAD_INVALID);
-    return;
+    goto finish;
   }
 
   /* generate and post an event with the data */
@@ -216,6 +231,14 @@ data_handler(coap_context_t *context, coap_resource_t *coap_resource,
   iot_data_free (results[0].value);
 
   response->code = COAP_RESPONSE_CODE(204);
+
+ finish:
+  if (device)
+  {
+    devsdk_free_devices (device);
+  }
+
+  return;
 }
 
 int
@@ -227,6 +250,8 @@ run_server(coap_driver *driver)
   coap_endpoint_t *endpoint = NULL;
   int result = EXIT_FAILURE;
   sdk_ctx = driver;
+  struct sigaction sa;
+
   coap_startup();
 
   /* resolve destination address where server should be sent */
@@ -249,9 +274,16 @@ run_server(coap_driver *driver)
   coap_register_handler(resource, COAP_REQUEST_POST, &data_handler);
   coap_add_resource(ctx, resource);
 
+  /* setup signal handling for input loop */
+  sigemptyset (&sa.sa_mask);
+  sa.sa_handler = handle_sig;
+  sa.sa_flags = 0;
+  sigaction (SIGINT, &sa, NULL);
+  sigaction (SIGTERM, &sa, NULL);
+
   iot_log_info(sdk_ctx->lc, "CoAP server started");
 
-  while (true) {
+  while (!quit) {
     coap_run_once(ctx, 0);
   }
 
