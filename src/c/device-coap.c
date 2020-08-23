@@ -123,7 +123,7 @@ int main (int argc, char *argv[])
 
   /* Initalise a new device service */
   devsdk_service_t *service = devsdk_service_new
-    ("device-coap", "1.0", impl, coapImpls, &argc, argv, &e);
+    ("device-coap", VERSION, impl, coapImpls, &argc, argv, &e);
   ERR_CHECK (e);
   impl->service = service;
 

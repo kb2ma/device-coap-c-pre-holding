@@ -1,16 +1,16 @@
 LIBCOAP ?= libcoap-2-tinydtls
-#CSDK_DIR = ../../device-sdk-c/repo/build/release/_CPack_Packages/Linux/TGZ/csdk-1.2.1
+VERSION=\"$(shell cat ../../VERSION || echo 0.0.0)\"
 
 pkgconfig = $(shell pkg-config $(1) $(2))
-#CFLAGS = -Wall -I$(CSDK_DIR)/include $(call pkgconfig,--cflags,$(LIBCOAP))
-CFLAGS = -Wall $(call pkgconfig,--cflags,$(LIBCOAP))
-#LDLIBS = -L$(CSDK_DIR)/lib -lcsdk $(call pkgconfig,--libs,$(LIBCOAP))
+CFLAGS = -Wall -DVERSION=$(VERSION) $(call pkgconfig,--cflags,$(LIBCOAP))
 LDLIBS = $(call pkgconfig,--libs,$(LIBCOAP)) -lcsdk
 LINK.o = $(LINK.c)
 
 all: device-coap
 
 device-coap: device-coap.o coap-server.o
+	$(CC) $(CFLAGS) $^ $(LDLIBS) -o device-coap
+	cp device-coap ../..
 
 clean:
-	rm -f *.o device-coap
+	rm -f *.o device-coap ../../device-coap
