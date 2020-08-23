@@ -23,6 +23,7 @@
 #define INT32_STR_MAXLEN 10
 
 #define RESOURCE_SEG1 "a1r"
+#define MSG_PAYLOAD_INVALID "payload not valid"
 
 static coap_driver *sdk_ctx;
 
@@ -132,8 +133,12 @@ parse_path(coap_pdu_t *request, devsdk_devices **device_ptr, devsdk_device_resou
     res = false;
   }
   coap_delete_string (uri_path);
-  *device_ptr = device;
-  *resource_ptr = resource;
+
+  if (res)
+  {
+    *device_ptr = device;
+    *resource_ptr = resource;
+  }
   return res;
 }
 
@@ -165,13 +170,23 @@ data_handler(coap_context_t *context, coap_resource_t *coap_resource,
     return;
   }
 
+  /* only int32 supported at present */
+  iot_data_type_t resource_type = iot_typecode_type (resource->request->type);
+  if (resource_type != IOT_DATA_INT32)
+  {
+    iot_log_warn (sdk_ctx->lc, "unsupported resource type %d", resource_type);
+    response->code = COAP_RESPONSE_CODE(500);
+    return;
+  }
+
   /* read data */
   size_t len;
   uint8_t *data;
   if (!coap_get_data (request, &len, &data) || !len || (len > INT32_STR_MAXLEN))
   {
-    iot_log_info (sdk_ctx->lc, "invalid payload of len %u", len);
+    iot_log_info (sdk_ctx->lc, "invalid data of len %u", len);
     response->code = COAP_RESPONSE_CODE(400);
+    coap_add_data(response, strlen(MSG_PAYLOAD_INVALID), (uint8_t *)MSG_PAYLOAD_INVALID);
     return;
   }
 
@@ -188,6 +203,7 @@ data_handler(coap_context_t *context, coap_resource_t *coap_resource,
   {
     iot_log_info (sdk_ctx->lc, "invalid data of len %u", len);
     response->code = COAP_RESPONSE_CODE(400);
+    coap_add_data(response, strlen(MSG_PAYLOAD_INVALID), (uint8_t *)MSG_PAYLOAD_INVALID);
     return;
   }
 
