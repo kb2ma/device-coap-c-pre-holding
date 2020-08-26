@@ -27,7 +27,7 @@ typedef struct coap_driver
 } coap_driver;
 
 
-int run_server(coap_driver *driver);
+int run_server(coap_driver *driver, bool is_psk);
 
 
 #ifdef __cplusplus

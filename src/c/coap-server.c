@@ -28,6 +28,11 @@
 
 static coap_driver *sdk_ctx;
 
+#define PSK_KEY_LEN 16
+/* ASCII 0N6iDGgu/kF4xoeg */
+static const uint8_t psk_key[PSK_KEY_LEN] = { 0x30, 0x4E, 0x36, 0x69, 0x44, 0x47, 0x67, 0x75, 
+                                              0x2F, 0x6B, 0x46, 0x34, 0x78, 0x6F, 0x65, 0x67 };
+
 /* controls input loop */
 static int quit = 0;
 
@@ -242,7 +247,7 @@ data_handler(coap_context_t *context, coap_resource_t *coap_resource,
 }
 
 int
-run_server(coap_driver *driver)
+run_server(coap_driver *driver, bool is_psk)
 {
   coap_context_t  *ctx = NULL;
   coap_address_t dst;
@@ -252,10 +257,20 @@ run_server(coap_driver *driver)
   sdk_ctx = driver;
   struct sigaction sa;
 
+  coap_dtls_set_log_level(LOG_DEBUG);
+  coap_set_log_level(LOG_DEBUG);
+
   coap_startup();
 
-  /* resolve destination address where server should be sent */
-  if (resolve_address("172.17.0.1", "5683", &dst) < 0) {
+  /* Resolve destination address where server should be sent. Use CoAP default ports. */
+  coap_proto_t proto = COAP_PROTO_UDP;
+  char *port = "5683";
+  if (is_psk)
+  {
+    proto = COAP_PROTO_DTLS;
+    port = "5684";
+  }
+  if (resolve_address("172.17.0.1", port, &dst) < 0) {
     iot_log_error(sdk_ctx->lc, "failed to resolve address");
     goto finish;
   }
@@ -263,8 +278,15 @@ run_server(coap_driver *driver)
   /* create CoAP context and a client session */
   ctx = coap_new_context(NULL);
 
-  if (!ctx || !(endpoint = coap_new_endpoint(ctx, &dst, COAP_PROTO_UDP))) {
+  if (!ctx || !(endpoint = coap_new_endpoint(ctx, &dst, proto)))
+  {
     iot_log_error(sdk_ctx->lc, "cannot initialize context");
+    goto finish;
+  }
+
+  if (is_psk && !(coap_context_set_psk(ctx, "", psk_key, PSK_KEY_LEN)))
+  {
+    iot_log_error(sdk_ctx->lc, "cannot initialize PSK");
     goto finish;
   }
 
@@ -281,7 +303,7 @@ run_server(coap_driver *driver)
   sigaction (SIGINT, &sa, NULL);
   sigaction (SIGTERM, &sa, NULL);
 
-  iot_log_info(sdk_ctx->lc, "CoAP server started");
+  iot_log_info(sdk_ctx->lc, "CoAP %s server started", is_psk ? "PSK" : "nosec");
 
   while (!quit) {
     coap_run_once(ctx, 0);

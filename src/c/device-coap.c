@@ -121,20 +121,29 @@ int main (int argc, char *argv[])
     NULL               /* auto-event stopped */
   };
 
-  /* Initalise a new device service */
+  /* Initialize a new device service */
   devsdk_service_t *service = devsdk_service_new
     ("device-coap", VERSION, impl, coapImpls, &argc, argv, &e);
   ERR_CHECK (e);
   impl->service = service;
 
   int n = 1;
+  bool is_psk = false;
   while (n < argc)
   {
     if (strcmp (argv[n], "-h") == 0 || strcmp (argv[n], "--help") == 0)
     {
+      printf ("Usage: device-coap [options]\n");
+      printf ("\n");
       printf ("Options:\n");
-      printf ("  -h, --help\t\t\tShow this text\n");
+      printf ("  -s        \t\tUse DTLS PSK security\n");
+      printf ("  -h, --help\t\tShow this text\n");
       return 0;
+    }
+    else if (strcmp (argv[n], "-s") == 0)
+    {
+      is_psk = true;
+      n++;
     }
     else
     {
@@ -147,7 +156,7 @@ int main (int argc, char *argv[])
   devsdk_service_start (service, NULL, &e);
   ERR_CHECK (e);
 
-  run_server(impl);
+  run_server(impl, is_psk);
 
   /* Stop the device service */
   devsdk_service_stop (service, true, &e);
