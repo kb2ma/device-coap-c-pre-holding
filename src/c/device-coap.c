@@ -155,6 +155,7 @@ int main (int argc, char *argv[])
   devsdk_service_start (service, NULL, &e);
   ERR_CHECK (e);
 
+  /* Run CoAP server */
   run_server(impl, psk_key, keylen);
 
   /* Stop the device service */

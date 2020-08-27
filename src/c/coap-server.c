@@ -33,14 +33,16 @@ static int quit = 0;
 
 /* signal handler for input loop */
 static void
-handle_sig(int signum) {
+handle_sig(int signum)
+{
   (void)signum;
   quit = 1;
 }
 
+/* Builds dst struct from host/port */
 static int
-resolve_address(const char *host, const char *service, coap_address_t *dst) {
-
+resolve_address(const char *host, const char *service, coap_address_t *dst)
+{
   struct addrinfo *res, *ainfo;
   struct addrinfo hints;
   int error, len=-1;
@@ -52,13 +54,16 @@ resolve_address(const char *host, const char *service, coap_address_t *dst) {
 
   error = getaddrinfo(host, service, &hints, &res);
 
-  if (error != 0) {
+  if (error != 0)
+  {
     iot_log_info(sdk_ctx->lc, "getaddrinfo: %s\n", gai_strerror(error));
     return error;
   }
 
-  for (ainfo = res; ainfo != NULL; ainfo = ainfo->ai_next) {
-    switch (ainfo->ai_family) {
+  for (ainfo = res; ainfo != NULL; ainfo = ainfo->ai_next)
+  {
+    switch (ainfo->ai_family)
+    {
     case AF_INET6:
     case AF_INET:
       len = dst->size = ainfo->ai_addrlen;
@@ -74,7 +79,7 @@ resolve_address(const char *host, const char *service, coap_address_t *dst) {
   return len;
 }
 
-/**
+/*
  * Parse URI path, expect 3 segments: /a1r/{device-name}/{resource-name}
  *
  * @param[in] request For path to parse
@@ -157,6 +162,10 @@ parse_path(coap_pdu_t *request, devsdk_devices **device_ptr, devsdk_device_resou
   return res;
 }
 
+/*
+ * Read data from device initiated CoAP POST to /a1r/{device-name}/{resource-name},
+ * and post it via devsdk_post_readings().
+ */
 static void
 data_handler(coap_context_t *context, coap_resource_t *coap_resource,
               coap_session_t *session, coap_pdu_t *request, coap_binary_t *token,
@@ -260,7 +269,7 @@ run_server(coap_driver *driver, const uint8_t *psk_key, int keylen)
   /* Resolve destination address where server should be sent. Use CoAP default ports. */
   coap_proto_t proto = COAP_PROTO_UDP;
   char *port = "5683";
-  if (psk_key)
+  if (keylen)
   {
     proto = COAP_PROTO_DTLS;
     port = "5684";
@@ -279,7 +288,7 @@ run_server(coap_driver *driver, const uint8_t *psk_key, int keylen)
     goto finish;
   }
 
-  if (psk_key && !(coap_context_set_psk(ctx, "", psk_key, keylen)))
+  if (keylen && !(coap_context_set_psk(ctx, "", psk_key, keylen)))
   {
     iot_log_error(sdk_ctx->lc, "cannot initialize PSK");
     goto finish;
@@ -298,9 +307,10 @@ run_server(coap_driver *driver, const uint8_t *psk_key, int keylen)
   sigaction (SIGINT, &sa, NULL);
   sigaction (SIGTERM, &sa, NULL);
 
-  iot_log_info(sdk_ctx->lc, "CoAP %s server started", psk_key ? "PSK" : "nosec");
+  iot_log_info(sdk_ctx->lc, "CoAP %s server started", keylen ? "PSK" : "nosec");
 
-  while (!quit) {
+  while (!quit)
+  {
     coap_run_once(ctx, 0);
   }
 
