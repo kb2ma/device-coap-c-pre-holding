@@ -28,11 +28,6 @@
 
 static coap_driver *sdk_ctx;
 
-#define PSK_KEY_LEN 16
-/* ASCII 0N6iDGgu/kF4xoeg */
-static const uint8_t psk_key[PSK_KEY_LEN] = { 0x30, 0x4E, 0x36, 0x69, 0x44, 0x47, 0x67, 0x75, 
-                                              0x2F, 0x6B, 0x46, 0x34, 0x78, 0x6F, 0x65, 0x67 };
-
 /* controls input loop */
 static int quit = 0;
 
@@ -247,7 +242,7 @@ data_handler(coap_context_t *context, coap_resource_t *coap_resource,
 }
 
 int
-run_server(coap_driver *driver, bool is_psk)
+run_server(coap_driver *driver, const uint8_t *psk_key, int keylen)
 {
   coap_context_t  *ctx = NULL;
   coap_address_t dst;
@@ -265,7 +260,7 @@ run_server(coap_driver *driver, bool is_psk)
   /* Resolve destination address where server should be sent. Use CoAP default ports. */
   coap_proto_t proto = COAP_PROTO_UDP;
   char *port = "5683";
-  if (is_psk)
+  if (psk_key)
   {
     proto = COAP_PROTO_DTLS;
     port = "5684";
@@ -284,7 +279,7 @@ run_server(coap_driver *driver, bool is_psk)
     goto finish;
   }
 
-  if (is_psk && !(coap_context_set_psk(ctx, "", psk_key, PSK_KEY_LEN)))
+  if (psk_key && !(coap_context_set_psk(ctx, "", psk_key, keylen)))
   {
     iot_log_error(sdk_ctx->lc, "cannot initialize PSK");
     goto finish;
@@ -303,7 +298,7 @@ run_server(coap_driver *driver, bool is_psk)
   sigaction (SIGINT, &sa, NULL);
   sigaction (SIGTERM, &sa, NULL);
 
-  iot_log_info(sdk_ctx->lc, "CoAP %s server started", is_psk ? "PSK" : "nosec");
+  iot_log_info(sdk_ctx->lc, "CoAP %s server started", psk_key ? "PSK" : "nosec");
 
   while (!quit) {
     coap_run_once(ctx, 0);

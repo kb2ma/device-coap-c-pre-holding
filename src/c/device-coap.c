@@ -19,22 +19,6 @@
 #define ERR_BUFSZ 1024
 
 
-/* will need this eventually
-static bool exceptionAndErrorN (iot_data_t **exception, iot_logger_t *lc, const char *msg, ...)
-{
-  char *buf = malloc (ERR_BUFSZ);
-  va_list args;
-  va_start (args, msg);
-  vsnprintf (buf, ERR_BUFSZ, msg, args);
-  va_end (args);
-
-  iot_log_error (lc, buf);
-  *exception = iot_data_alloc_string (buf, IOT_DATA_TAKE);
-
-  return false;
-}
-*/
-
 static bool coap_init
 (
   void *impl,
@@ -128,7 +112,8 @@ int main (int argc, char *argv[])
   impl->service = service;
 
   int n = 1;
-  bool is_psk = false;
+  uint8_t psk_key[16];
+  int keylen = 0;
   while (n < argc)
   {
     if (strcmp (argv[n], "-h") == 0 || strcmp (argv[n], "--help") == 0)
@@ -136,19 +121,33 @@ int main (int argc, char *argv[])
       printf ("Usage: device-coap [options]\n");
       printf ("\n");
       printf ("Options:\n");
-      printf ("  -s        \t\tUse DTLS PSK security\n");
+      printf ("  -k <key>    \t\tUse DTLS PSK security, key max 16 chars\n");
       printf ("  -h, --help\t\tShow this text\n");
       return 0;
     }
-    else if (strcmp (argv[n], "-s") == 0)
+    else if (strcmp (argv[n], "-k") == 0)
     {
-      is_psk = true;
-      n++;
+      if (argc > n + 1)
+      {
+        keylen = strlen(argv[n + 1]);
+        if (keylen > 16)
+        {
+          printf ("Key too long\n");
+          return 1;
+        }
+        memcpy(psk_key, argv[n+1], keylen);
+        n += 2;
+      }
+      else
+      {
+        printf ("Missing value of key\n");
+        return 1;
+      }
     }
     else
     {
       printf ("%s: Unrecognized option %s\n", argv[0], argv[n]);
-      return 0;
+      return 1;
     }
   }
 
@@ -156,7 +155,7 @@ int main (int argc, char *argv[])
   devsdk_service_start (service, NULL, &e);
   ERR_CHECK (e);
 
-  run_server(impl, is_psk);
+  run_server(impl, psk_key, keylen);
 
   /* Stop the device service */
   devsdk_service_stop (service, true, &e);
