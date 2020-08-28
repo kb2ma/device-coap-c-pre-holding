@@ -33,7 +33,7 @@ static int quit = 0;
 
 /* signal handler for input loop */
 static void
-handle_sig(int signum)
+handle_sig (int signum)
 {
   (void)signum;
   quit = 1;
@@ -41,22 +41,22 @@ handle_sig(int signum)
 
 /* Builds dst struct from host/port */
 static int
-resolve_address(const char *host, const char *service, coap_address_t *dst)
+resolve_address (const char *host, const char *service, coap_address_t *dst)
 {
   struct addrinfo *res, *ainfo;
   struct addrinfo hints;
   int error, len=-1;
 
-  memset(&hints, 0, sizeof(hints));
-  memset(dst, 0, sizeof(*dst));
+  memset (&hints, 0, sizeof (hints));
+  memset (dst, 0, sizeof (*dst));
   hints.ai_socktype = SOCK_DGRAM;
   hints.ai_family = AF_UNSPEC;
 
-  error = getaddrinfo(host, service, &hints, &res);
+  error = getaddrinfo (host, service, &hints, &res);
 
   if (error != 0)
   {
-    iot_log_info(sdk_ctx->lc, "getaddrinfo: %s\n", gai_strerror(error));
+    iot_log_info (sdk_ctx->lc, "getaddrinfo: %s\n", gai_strerror (error));
     return error;
   }
 
@@ -67,7 +67,7 @@ resolve_address(const char *host, const char *service, coap_address_t *dst)
     case AF_INET6:
     case AF_INET:
       len = dst->size = ainfo->ai_addrlen;
-      memcpy(&dst->addr.sin6, ainfo->ai_addr, dst->size);
+      memcpy (&dst->addr.sin6, ainfo->ai_addr, dst->size);
       goto finish;
     default:
       ;
@@ -75,7 +75,7 @@ resolve_address(const char *host, const char *service, coap_address_t *dst)
   }
 
  finish:
-  freeaddrinfo(res);
+  freeaddrinfo (res);
   return len;
 }
 
@@ -88,7 +88,7 @@ resolve_address(const char *host, const char *service, coap_address_t *dst)
  * @return true if URI format OK, and device and resource found 
  */
 static bool
-parse_path(coap_pdu_t *request, devsdk_devices **device_ptr, devsdk_device_resources **resource_ptr)
+parse_path (coap_pdu_t *request, devsdk_devices **device_ptr, devsdk_device_resources **resource_ptr)
 {
   coap_string_t *uri_path = coap_get_uri_path (request);
   iot_log_debug (sdk_ctx->lc, "URI %s", uri_path->s);
@@ -167,7 +167,7 @@ parse_path(coap_pdu_t *request, devsdk_devices **device_ptr, devsdk_device_resou
  * and post it via devsdk_post_readings().
  */
 static void
-data_handler(coap_context_t *context, coap_resource_t *coap_resource,
+data_handler (coap_context_t *context, coap_resource_t *coap_resource,
               coap_session_t *session, coap_pdu_t *request, coap_binary_t *token,
               coap_string_t *query, coap_pdu_t *response)
 {
@@ -181,7 +181,7 @@ data_handler(coap_context_t *context, coap_resource_t *coap_resource,
   /* reject default PUT method */
   if (request->code == COAP_REQUEST_PUT)
   {
-    response->code = COAP_RESPONSE_CODE(405);
+    response->code = COAP_RESPONSE_CODE (405);
     return;
   }
 
@@ -190,7 +190,7 @@ data_handler(coap_context_t *context, coap_resource_t *coap_resource,
   devsdk_device_resources *resource = NULL;
   if (!parse_path (request, &device, &resource))
   {
-    response->code = COAP_RESPONSE_CODE(404);
+    response->code = COAP_RESPONSE_CODE (404);
     goto finish;
   }
 
@@ -199,7 +199,7 @@ data_handler(coap_context_t *context, coap_resource_t *coap_resource,
   if (resource_type != IOT_DATA_INT32)
   {
     iot_log_warn (sdk_ctx->lc, "unsupported resource type %d", resource_type);
-    response->code = COAP_RESPONSE_CODE(500);
+    response->code = COAP_RESPONSE_CODE (500);
     goto finish;
   }
 
@@ -209,8 +209,8 @@ data_handler(coap_context_t *context, coap_resource_t *coap_resource,
   if (!coap_get_data (request, &len, &data) || !len || (len > INT32_STR_MAXLEN))
   {
     iot_log_info (sdk_ctx->lc, "invalid data of len %u", len);
-    response->code = COAP_RESPONSE_CODE(400);
-    coap_add_data(response, strlen(MSG_PAYLOAD_INVALID), (uint8_t *)MSG_PAYLOAD_INVALID);
+    response->code = COAP_RESPONSE_CODE (400);
+    coap_add_data (response, strlen (MSG_PAYLOAD_INVALID), (uint8_t *)MSG_PAYLOAD_INVALID);
     goto finish;
   }
 
@@ -226,8 +226,8 @@ data_handler(coap_context_t *context, coap_resource_t *coap_resource,
   if (errno || (*endptr != '\0') || (int_val < INT32_MIN) || (int_val > INT32_MAX))
   {
     iot_log_info (sdk_ctx->lc, "invalid data of len %u", len);
-    response->code = COAP_RESPONSE_CODE(400);
-    coap_add_data(response, strlen(MSG_PAYLOAD_INVALID), (uint8_t *)MSG_PAYLOAD_INVALID);
+    response->code = COAP_RESPONSE_CODE (400);
+    coap_add_data (response, strlen (MSG_PAYLOAD_INVALID), (uint8_t *)MSG_PAYLOAD_INVALID);
     goto finish;
   }
 
@@ -239,7 +239,7 @@ data_handler(coap_context_t *context, coap_resource_t *coap_resource,
   devsdk_post_readings (sdk_ctx->service, device->devname, resource->request->resname, results);
   iot_data_free (results[0].value);
 
-  response->code = COAP_RESPONSE_CODE(204);
+  response->code = COAP_RESPONSE_CODE (204);
 
  finish:
   if (device)
@@ -251,7 +251,7 @@ data_handler(coap_context_t *context, coap_resource_t *coap_resource,
 }
 
 int
-run_server(coap_driver *driver, const uint8_t *psk_key, int keylen)
+run_server (coap_driver *driver, const uint8_t *psk_key, int keylen)
 {
   coap_context_t  *ctx = NULL;
   coap_address_t dst;
@@ -261,7 +261,7 @@ run_server(coap_driver *driver, const uint8_t *psk_key, int keylen)
   sdk_ctx = driver;
   struct sigaction sa;
 
-  coap_startup();
+  coap_startup ();
 
   /* Use EdgeX log level */
   coap_log_t log_level;
@@ -279,7 +279,7 @@ run_server(coap_driver *driver, const uint8_t *psk_key, int keylen)
     default:
       log_level = LOG_INFO;
   }
-  coap_set_log_level(log_level);
+  coap_set_log_level (log_level);
   /* workaround for tinydtls log level mismatch to avoid excessive debug logging */
   if (strstr (LIBCOAP, "tinydtls") && log_level == LOG_INFO)
   {
@@ -298,31 +298,31 @@ run_server(coap_driver *driver, const uint8_t *psk_key, int keylen)
     proto = COAP_PROTO_DTLS;
     port = "5684";
   }
-  if (resolve_address("172.17.0.1", port, &dst) < 0) {
-    iot_log_error(sdk_ctx->lc, "failed to resolve address");
+  if (resolve_address ("172.17.0.1", port, &dst) < 0) {
+    iot_log_error (sdk_ctx->lc, "failed to resolve address");
     goto finish;
   }
 
   /* create CoAP context and a client session */
-  ctx = coap_new_context(NULL);
+  ctx = coap_new_context (NULL);
 
-  if (!ctx || !(endpoint = coap_new_endpoint(ctx, &dst, proto)))
+  if (!ctx || !(endpoint = coap_new_endpoint (ctx, &dst, proto)))
   {
-    iot_log_error(sdk_ctx->lc, "cannot initialize context");
+    iot_log_error (sdk_ctx->lc, "cannot initialize context");
     goto finish;
   }
 
-  if (keylen && !(coap_context_set_psk(ctx, "", psk_key, keylen)))
+  if (keylen && !(coap_context_set_psk (ctx, "", psk_key, keylen)))
   {
-    iot_log_error(sdk_ctx->lc, "cannot initialize PSK");
+    iot_log_error (sdk_ctx->lc, "cannot initialize PSK");
     goto finish;
   }
 
   /* Creates handler for PUT, which is not what we want... */
-  resource = coap_resource_unknown_init(&data_handler);
+  resource = coap_resource_unknown_init (&data_handler);
   /* ... so add POST handler also. */
-  coap_register_handler(resource, COAP_REQUEST_POST, &data_handler);
-  coap_add_resource(ctx, resource);
+  coap_register_handler (resource, COAP_REQUEST_POST, &data_handler);
+  coap_add_resource (ctx, resource);
 
   /* setup signal handling for input loop */
   sigemptyset (&sa.sa_mask);
@@ -331,19 +331,19 @@ run_server(coap_driver *driver, const uint8_t *psk_key, int keylen)
   sigaction (SIGINT, &sa, NULL);
   sigaction (SIGTERM, &sa, NULL);
 
-  iot_log_info(sdk_ctx->lc, "CoAP %s server started", keylen ? "PSK" : "nosec");
+  iot_log_info (sdk_ctx->lc, "CoAP %s server started", keylen ? "PSK" : "nosec");
 
   while (!quit)
   {
-    coap_run_once(ctx, 0);
+    coap_run_once (ctx, 0);
   }
 
   result = EXIT_SUCCESS;
 
  finish:
 
-  coap_free_context(ctx);
-  coap_cleanup();
+  coap_free_context (ctx);
+  coap_cleanup ();
 
   return result;
 }
