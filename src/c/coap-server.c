@@ -261,10 +261,26 @@ run_server(coap_driver *driver, const uint8_t *psk_key, int keylen)
   sdk_ctx = driver;
   struct sigaction sa;
 
-  coap_dtls_set_log_level(LOG_DEBUG);
-  coap_set_log_level(LOG_DEBUG);
-
   coap_startup();
+
+  /* Use EdgeX log level */
+  coap_log_t log_level;
+  switch (sdk_ctx->lc->level)
+  {
+    case IOT_LOG_ERROR:
+      log_level = LOG_ERR;
+      break;
+    case IOT_LOG_WARN:
+      log_level = LOG_WARNING;
+      break;
+    case IOT_LOG_DEBUG:
+      log_level = LOG_DEBUG;
+      break;
+    default:
+      log_level = LOG_INFO;
+  }
+  coap_dtls_set_log_level(log_level);
+  coap_set_log_level(log_level);
 
   /* Resolve destination address where server should be sent. Use CoAP default ports. */
   coap_proto_t proto = COAP_PROTO_UDP;

@@ -49,7 +49,7 @@ Type = 'consul'
     Interval = '30s'
 
 [Logging]
-  LogLevel = 'DEBUG'
+  LogLevel = 'INFO'
 
 # Pre-define Devices
 [[DeviceList]]
