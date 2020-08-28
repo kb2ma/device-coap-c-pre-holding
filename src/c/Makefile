@@ -2,7 +2,7 @@ LIBCOAP ?= libcoap-2-tinydtls
 VERSION=\"$(shell cat ../../VERSION || echo 0.0.0)\"
 
 pkgconfig = $(shell pkg-config $(1) $(2))
-CFLAGS = -Wall -DVERSION=$(VERSION) $(call pkgconfig,--cflags,$(LIBCOAP))
+CFLAGS = -Wall -DVERSION=$(VERSION) -DLIBCOAP=\"$(LIBCOAP)\" $(call pkgconfig,--cflags,$(LIBCOAP))
 LDLIBS = $(call pkgconfig,--libs,$(LIBCOAP)) -lcsdk
 LINK.o = $(LINK.c)
 

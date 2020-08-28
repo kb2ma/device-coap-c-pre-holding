@@ -279,8 +279,16 @@ run_server(coap_driver *driver, const uint8_t *psk_key, int keylen)
     default:
       log_level = LOG_INFO;
   }
-  coap_dtls_set_log_level(log_level);
   coap_set_log_level(log_level);
+  /* workaround for tinydtls log level mismatch to avoid excessive debug logging */
+  if (strstr (LIBCOAP, "tinydtls") && log_level == LOG_INFO)
+  {
+    coap_dtls_set_log_level (log_level - 1);
+  }
+  else
+  {
+    coap_dtls_set_log_level (log_level);
+  }
 
   /* Resolve destination address where server should be sent. Use CoAP default ports. */
   coap_proto_t proto = COAP_PROTO_UDP;
