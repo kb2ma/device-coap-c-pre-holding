@@ -4,18 +4,18 @@ EdgeX device service for CoAP-based REST protocol
 
 This device service allows a 3rd party sensor application to push data into EdgeX via CoAP. Like HTTP, CoAP provides REST based access to resources, but CoAP is more compact for use in constrained IoT devices.
 
-The `device-coap-c` service is modeled after the HTTP based [device-rest-go](https://github.com/edgexfoundry/device-rest-go) service, and runs over UDP. The current implementation is meant for one-way communication into EdgeX via async readings. If future use cases determine a need for `commanding`, i.e. two-way communication, it can be added then.
+The `device-coap-c` service is modeled after the HTTP based [device-rest-go](https://github.com/edgexfoundry/device-rest-go) service, and runs over UDP. The current implementation is meant for one-way communication from a device into EdgeX via async readings. Synchronous interaction initiated by EdgeX can be added in the future.
 
 
 ## REST Endpoints
 
-This device service creates the additional parameterized `REST` endpoint:
+This device service creates an additional parameterized endpoint:
 
 ```
    /a1r/{deviceName}/{resourceName}
 ```
 
-- `deviceName` refers to a `device` managed by the REST device service.
+- `deviceName` refers to a `device` managed by the CoAP device service.
 - `resourceName` refers to the `deviceResource` defined in the `device profile` associated with the given `deviceName`.  Presently only int32 data is supported.
 
 The data posted to this endpoint is type validated and type casted (text data only) to the type defined by the specified `device resource`. The resulting value is then sent into EdgeX via the Device SDK's asynchronous `post_readings` capability.
