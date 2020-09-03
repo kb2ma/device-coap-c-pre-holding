@@ -335,7 +335,7 @@ run_server (coap_driver *driver, const uint8_t *psk_key, int keylen)
 
   while (!quit)
   {
-    coap_run_once (ctx, 0);
+    coap_io_process (ctx, 0);
   }
 
   result = EXIT_SUCCESS;
