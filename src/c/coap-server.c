@@ -281,7 +281,8 @@ run_server (coap_driver *driver, const uint8_t *psk_key, int keylen)
   }
   coap_set_log_level (log_level);
   /* workaround for tinydtls log level mismatch to avoid excessive debug logging */
-  if (strstr (LIBCOAP, "tinydtls") && log_level == LOG_INFO)
+  coap_tls_version_t *ver = coap_get_tls_library_version ();
+  if (ver->type == COAP_TLS_LIBRARY_TINYDTLS && log_level == LOG_INFO)
   {
     coap_dtls_set_log_level (log_level - 1);
   }
