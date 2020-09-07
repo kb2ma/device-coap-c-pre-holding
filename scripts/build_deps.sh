@@ -20,29 +20,37 @@ mkdir deps
 cd /device-coap/deps
 
 # for tinydtls
-# also see https://github.com/eclipse/tinydtls/pull/18 for cmake PR
-#
-# git clone https://github.com/eclipse/tinydtls.git
-# cd tinydtls
-# git checkout develop
-# git reset --hard b0e230d
-# autoreconf --force --install
-# ./configure
-# make && make install
+git clone https://github.com/eclipse/tinydtls.git
+cd tinydtls
+git checkout develop
+git reset --hard b0e230d
 
+# patches are all new files, for cmake build
+cp /device-coap/scripts/AutoConf_cmake_patch AutoConf.cmake
+cp /device-coap/scripts/CMakeLists_txt_patch CMakeLists.txt
+cp /device-coap/scripts/dtls_config_h_cmake_in_patch dtls_config.h.cmake.in
+cp /device-coap/scripts/tests_CMakeLists_txt_patch tests/CMakeLists.txt
 
+mkdir -p build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON ..
+make && make install
+
+# for libcoap
 git clone https://github.com/obgm/libcoap.git
 cd libcoap
 # This version includes the most recent known good tinydtls, as of 2020-08-12
 git reset --hard 1739507
 
-# patch for bug in coap_config.h.in
+# patch for include file path
+patch -p1 < /device-coap/scripts/FindTinyDTLS_cmake_patch
+# patch for bug
 patch -p1 < /device-coap/scripts/config_h_in_patch
 
 mkdir -p build && cd build
-cmake .. -DDTLS_BACKEND=tinydtls -DUSE_VENDORED_TINYDTLS=OFF -DENABLE_TESTS=OFF \
-         -DENABLE_EXAMPLES=OFF -DENABLE_DOCS=OFF -DCMAKE_BUILD_TYPE=Release \
-         -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_LIBDIR=lib
+cmake -DDTLS_BACKEND=tinydtls -DUSE_VENDORED_TINYDTLS=OFF -DENABLE_TESTS=OFF \
+      -DENABLE_EXAMPLES=OFF -DENABLE_DOCS=OFF -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_LIBDIR=lib \
+      ..
 make && make install
 
 # get c-sdk from edgexfoundry and build
