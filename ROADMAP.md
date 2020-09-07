@@ -1,6 +1,5 @@
 Presently `device-coap-c` is a proof of concept. Below are ideas for future development, more or less in priority order.
 
-* Support for CMake build
 * Support for building and running in a container
 * Define libcoap host and ports in device config
 * Define security parameters in the EdgeX security microservice rather than command line
