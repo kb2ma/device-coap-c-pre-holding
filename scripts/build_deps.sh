@@ -6,6 +6,8 @@
 #
 #   Options:
 #   build-csdk: 1 to build EdgeX C SDK, 0 to skip
+#
+# Assumes WORKDIR is /device-coap
 set -e -x
 
 BUILD_CSDK=$1
@@ -34,6 +36,7 @@ cp /device-coap/scripts/tests_CMakeLists_txt_patch tests/CMakeLists.txt
 mkdir -p build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON ..
 make && make install
+cd /device-coap/deps
 
 # for libcoap
 git clone https://github.com/obgm/libcoap.git
@@ -49,7 +52,7 @@ patch -p1 < /device-coap/scripts/config_h_in_patch
 mkdir -p build && cd build
 cmake -DDTLS_BACKEND=tinydtls -DUSE_VENDORED_TINYDTLS=OFF -DENABLE_TESTS=OFF \
       -DENABLE_EXAMPLES=OFF -DENABLE_DOCS=OFF -DCMAKE_BUILD_TYPE=Release \
-      -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_LIBDIR=lib \
+      -DBUILD_SHARED_LIBS=ON \
       ..
 make && make install
 
@@ -59,10 +62,14 @@ then
   cd /device-coap/deps
 
   git clone https://github.com/PJK/libcbor
-  sed -e 's/-flto//' -i libcbor/CMakeLists.txt
-  cmake -DCMAKE_BUILD_TYPE=Release -DCBOR_CUSTOM_ALLOC=ON libcbor
+  cd libcbor
+  git reset --hard v0.7.0
+  
+  mkdir -p build && cd build
+  cmake -DCMAKE_BUILD_TYPE=Release -DCBOR_CUSTOM_ALLOC=ON ..
   make
   make install
+  cd /device-coap/deps
 
   wget https://github.com/edgexfoundry/device-sdk-c/archive/v1.3.0-dev.3.zip
   unzip v1.3.0-dev.3.zip

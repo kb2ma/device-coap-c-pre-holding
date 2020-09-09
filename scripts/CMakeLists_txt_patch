@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
+project(tinydtls LANGUAGES C)
 
 include (AutoConf.cmake)
 
@@ -48,3 +49,10 @@ install(
   PATTERN "platform-specific" EXCLUDE
   PATTERN "sha2/testvectors" EXCLUDE
   PATTERN "tests" EXCLUDE)
+install(
+  DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tinydtls
+  COMPONENT dev
+  FILES_MATCHING
+  PATTERN "dtls_config.h"
+  PATTERN "CMakeFiles" EXCLUDE)

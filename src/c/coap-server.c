@@ -299,7 +299,7 @@ run_server (coap_driver *driver, const uint8_t *psk_key, int keylen)
     proto = COAP_PROTO_DTLS;
     port = "5684";
   }
-  if (resolve_address ("172.17.0.1", port, &dst) < 0) {
+  if (resolve_address ("0.0.0.0", port, &dst) < 0) {
     iot_log_error (sdk_ctx->lc, "failed to resolve address");
     goto finish;
   }
