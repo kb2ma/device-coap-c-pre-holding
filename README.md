@@ -69,7 +69,6 @@ Below is an example entry for a docker-compose template. The CoAP server listens
     depends_on:
       - metadata
       - data
-      - command
 ```
 
 ## Testing/Simulation
