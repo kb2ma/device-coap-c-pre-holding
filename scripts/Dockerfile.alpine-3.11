@@ -46,7 +46,5 @@ COPY LICENSE /opt/device-coap
 COPY Attribution.txt /opt/device-coap
 COPY res /opt/device-coap/res
 
-EXPOSE 5683/udp
-
 WORKDIR /opt/device-coap
 CMD ["./device-coap"]
