@@ -42,6 +42,9 @@ Type = 'consul'
     Enabled = false
     Interval = '30s'
 
+[Driver]
+  CoapProtocol = 'coap'
+
 [Logging]
   LogLevel = 'INFO'
 

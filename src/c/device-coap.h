@@ -27,6 +27,8 @@ typedef struct coap_driver
 {
   iot_logger_t * lc;
   devsdk_service_t *service;
+  const char *coap_proto;          /**< CoAP protocol with device; 'coap' or 'coaps';
+                                        from config, must retain for internal use */
 } coap_driver;
 
 /**
