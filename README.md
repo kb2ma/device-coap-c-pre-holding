@@ -15,7 +15,7 @@ This device service creates a parameterized CoAP resource to which data may be p
    /a1r/{deviceName}/{resourceName}
 ```
 
-- `a1r` is short for "API v1 resource".
+- `a1r` is short for "API v1 resource", as defined by device-rest-go.
 - `deviceName` refers to a `device` managed by the CoAP device service.
 - `resourceName` refers to the `deviceResource` defined in the `device profile` associated with the given `deviceName`.
 
@@ -26,8 +26,12 @@ See the Testing section below for examle use.
 
 ## Configuration
 
-This device service uses the standard configuration defined by the **Device SDK**.
+This section describes properties in `res/configuration.toml` as used by device-coap-c. See the _Configuration and Registry_ section of the EdgeX documentation for background.
 
+### Driver
+`SecurityMode` defines CoAP client-server security. Use `PSK` for pre-shared key, or `NoSec` for no security.
+
+### DeviceList
 The `DeviceList` configuration is standard except that the `DeviceList.Protocols` can be empty. The following is a sample `DeviceList` that works with the sample device profiles referenced below. Also see [configuration.toml](./res/configuration.toml).
 
 ```toml
@@ -73,9 +77,9 @@ Below is an example entry for a docker-compose template. The CoAP server listens
 
 ## Testing/Simulation
 
-You can use simulated data to test this service with libcoap's `coap-client` command line tool, like the examples below.
+You can use simulated data to test this service with libcoap's `coap-client` command line tool. The examples below are organized by the SecurityMode defined in the configuration.
 
-**nosec**
+**NoSec**
 ```
    $ coap-client -m post -e 1001 coap://172.17.0.1/a1r/d1/int
 ```
@@ -106,4 +110,4 @@ device-coap-c depends on libcoap and tinydtls. See [build_deps.sh](scripts/build
    $ device-coap-c -k nitt4agm2c2tatcy
 ```
 
-In this case, *all* messaging uses DTLS. To run `device-coap-c` without security (nosec), do not include the `-k` option.
+In this case, *all* messaging uses DTLS. To run `device-coap-c` without security (NoSec), do not include the `-k` option.

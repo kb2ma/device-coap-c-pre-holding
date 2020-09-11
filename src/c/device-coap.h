@@ -20,6 +20,15 @@
 extern "C" {
 #endif
 
+/** CoAP messaging transport security mode */
+typedef enum
+{
+  SECURITY_MODE_PSK,        /**< pre-shared key */
+  SECURITY_MODE_NOSEC,      /**< no security */
+  SECURITY_MODE_UNKNOWN     /**< not a security mode; just means mode not known */
+} coap_security_mode_t;
+
+
 /**
  * device-coap-c specific data included with service callbacks
  */
@@ -27,8 +36,8 @@ typedef struct coap_driver
 {
   iot_logger_t * lc;
   devsdk_service_t *service;
-  const char *coap_proto;          /**< CoAP protocol with device; 'coap' or 'coaps';
-                                        from config, must retain for internal use */
+  coap_security_mode_t security_mode;   /**< CoAP transport security mode; from config,
+                                             must retain for internal use */
 } coap_driver;
 
 /**

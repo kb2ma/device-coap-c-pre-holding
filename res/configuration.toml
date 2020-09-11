@@ -43,7 +43,7 @@ Type = 'consul'
     Interval = '30s'
 
 [Driver]
-  CoapProtocol = 'coap'
+  SecurityMode = 'NoSec'
 
 [Logging]
   LogLevel = 'INFO'
