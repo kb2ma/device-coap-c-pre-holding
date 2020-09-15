@@ -251,7 +251,7 @@ data_handler (coap_context_t *context, coap_resource_t *coap_resource,
 }
 
 int
-run_server (coap_driver *driver, const uint8_t *psk_key, int keylen)
+run_server (coap_driver *driver)
 {
   coap_context_t  *ctx = NULL;
   coap_address_t dst;
@@ -294,7 +294,7 @@ run_server (coap_driver *driver, const uint8_t *psk_key, int keylen)
   /* Resolve destination address where server should be sent. Use CoAP default ports. */
   coap_proto_t proto = COAP_PROTO_UDP;
   char *port = "5683";
-  if (keylen)
+  if (driver->security_mode != SECURITY_MODE_NOSEC)
   {
     proto = COAP_PROTO_DTLS;
     port = "5684";
@@ -313,10 +313,18 @@ run_server (coap_driver *driver, const uint8_t *psk_key, int keylen)
     goto finish;
   }
 
-  if (keylen && !(coap_context_set_psk (ctx, "", psk_key, keylen)))
+  if (driver->security_mode == SECURITY_MODE_PSK)
   {
-    iot_log_error (sdk_ctx->lc, "cannot initialize PSK");
-    goto finish;
+    /* use iterator just to get address of PSK key data */
+    iot_data_array_iter_t array_iter;
+    iot_data_array_iter (driver->psk_key, &array_iter);
+    iot_data_array_iter_next(&array_iter);
+
+    if (!(coap_context_set_psk (ctx, "", (uint8_t *)iot_data_array_iter_value (&array_iter), iot_data_array_length (driver->psk_key))))
+    {
+      iot_log_error (sdk_ctx->lc, "cannot initialize PSK");
+      goto finish;
+    }
   }
 
   /* Creates handler for PUT, which is not what we want... */
@@ -332,7 +340,7 @@ run_server (coap_driver *driver, const uint8_t *psk_key, int keylen)
   sigaction (SIGINT, &sa, NULL);
   sigaction (SIGTERM, &sa, NULL);
 
-  iot_log_info (sdk_ctx->lc, "CoAP %s server started", keylen ? "PSK" : "nosec");
+  iot_log_info (sdk_ctx->lc, "CoAP %s server started", driver->psk_key ? "PSK" : "nosec");
 
   while (!quit)
   {

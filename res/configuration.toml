@@ -1,31 +1,31 @@
 [Service]
-BootTimeout = 30000
-CheckInterval = '10s'
-Host = 'localhost'  # set this to the IP address of the system host
-ServerBindAddr = ''  # blank value defaults to Service.Host value
-Port = 49750  #modified to be different than existing device services
-Protocol = 'http'
-StartupMsg = 'CoAP device started'
-Timeout = 20000
-ConnectRetries = 20
-Labels = []
-EnableAsyncReadings = true
-AsyncBufferSize = 16
+  BootTimeout = 30000
+  CheckInterval = '10s'
+  Host = '172.17.0.1'
+  ServerBindAddr = ''
+  Port = 49750
+  Protocol = 'http'
+  StartupMsg = 'CoAP device started'
+  Timeout = 20000
+  ConnectRetries = 20
+  Labels = []
+  EnableAsyncReadings = true
+  AsyncBufferSize = 16
 
 [Registry]
-Host = 'edgex-core-consul'
-Port = 8500
-Type = 'consul'
-
+  Host = 'localhost'
+  Port = 8500
+  Type = 'consul'
+  
 [Clients]
   [Clients.Data]
   Protocol = 'http'
-  Host = 'edgex-core-data'
+  Host = 'localhost'
   Port = 48080
 
   [Clients.Metadata]
   Protocol = 'http'
-  Host = 'edgex-core-metadata'
+  Host = 'localhost'
   Port = 48081
 
 [Device]
@@ -43,7 +43,9 @@ Type = 'consul'
     Interval = '30s'
 
 [Driver]
-  SecurityMode = 'NoSec'
+  SecurityMode = 'PSK'
+  # key is up to 16 arbitrary bytes; must be base64 encoded here
+  PskKey = 'ME42aURHZ3Uva0Y0eG9lZw=='
 
 [Logging]
   LogLevel = 'INFO'

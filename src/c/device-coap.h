@@ -38,18 +38,17 @@ typedef struct coap_driver
   devsdk_service_t *service;
   coap_security_mode_t security_mode;   /**< CoAP transport security mode; from config,
                                              must retain for internal use */
+  iot_data_t *psk_key;
 } coap_driver;
 
 /**
- * Runs a CoAP server, optionally with PSK security, until a SIGINT or SIGTERM event.
+ * Runs a CoAP server until a SIGINT or SIGTERM event.
  *
  * @param driver   EdgeX driver
- * @param psk_key  PSK key
- * @param keylen   Length of psk_key, or 0 if nosec
  * @return EXIT_SUCCESS on normal completion
  * @return EXIT_FAILURE if unable to run server
  */
-int run_server(coap_driver *driver, const uint8_t *psk_key, int keylen);
+int run_server(coap_driver *driver);
 
 
 #ifdef __cplusplus

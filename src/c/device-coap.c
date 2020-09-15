@@ -18,6 +18,7 @@
 
 #define ERR_BUFSZ 1024
 #define SECURITY_MODE_KEY "SecurityMode"
+#define PSK_KEY_KEY "PskKey"
 
 
 /* Looks up security mode enum value from configuration text value */
@@ -53,7 +54,28 @@ static bool coap_init
   driver->lc = lc;
   driver->security_mode = find_security_mode (iot_data_string_map_get_string (config, SECURITY_MODE_KEY));
 
-  iot_log_debug (driver->lc, "Init complete");
+  if (driver->security_mode == SECURITY_MODE_PSK)
+  {
+    const char *conf_psk_key = iot_data_string_map_get_string (config, PSK_KEY_KEY);
+    if (strlen (conf_psk_key))
+    {
+      iot_data_t *key_array = iot_data_alloc_array_from_base64 (conf_psk_key);
+      driver->psk_key = key_array;
+      iot_log_info (lc, "PSK key len %u", iot_data_array_length (key_array));
+    }
+    else
+    {
+      iot_log_error (lc, "PSK key not in configuration");
+      driver->psk_key = NULL;
+      return false;
+    }
+  }
+  else
+  {
+    driver->psk_key = NULL;
+  }
+
+  iot_log_debug (lc, "Init complete");
   return true;
 }
 
@@ -137,8 +159,6 @@ int main (int argc, char *argv[])
 
   int res = 0;
   int n = 1;
-  uint8_t psk_key[16];
-  int keylen = 0;
   while (n < argc)
   {
     if (strcmp (argv[n], "-h") == 0 || strcmp (argv[n], "--help") == 0)
@@ -146,30 +166,8 @@ int main (int argc, char *argv[])
       printf ("Usage: device-coap [options]\n");
       printf ("\n");
       printf ("Options:\n");
-      printf ("  -k <key>    \t\tUse DTLS PSK security, key max 16 chars\n");
       printf ("  -h, --help\t\tShow this text\n");
       goto end;
-    }
-    else if (strcmp (argv[n], "-k") == 0)
-    {
-      if (argc > n + 1)
-      {
-        keylen = strlen(argv[n + 1]);
-        if (keylen > 16)
-        {
-          printf ("Key too long\n");
-          res = 1;
-          goto end;
-        }
-        memcpy(psk_key, argv[n+1], keylen);
-        n += 2;
-      }
-      else
-      {
-        printf ("Missing value of key\n");
-        res = 1;
-        goto end;
-      }
     }
     else
     {
@@ -182,33 +180,21 @@ int main (int argc, char *argv[])
   /* Create default Driver config and start the device service */
   iot_data_t *driver_map = iot_data_alloc_map (IOT_DATA_STRING);
   iot_data_string_map_add (driver_map, SECURITY_MODE_KEY, iot_data_alloc_string ("NoSec", IOT_DATA_REF));
-  
+  iot_data_string_map_add (driver_map, PSK_KEY_KEY, iot_data_alloc_string ("", IOT_DATA_REF));
+
   devsdk_service_start (service, driver_map, &e);
   ERR_CHECK (e);
   iot_data_free (driver_map);
 
-  /* Validate transport security mode from config/environment.
-   * Roadmap is to read key from vault instead. */
-  switch (impl->security_mode) {
-    case SECURITY_MODE_PSK:
-      if (keylen == 0)
-      {
-        printf ("DTLS PSK key not defined\n");
-        res = 1;
-        goto stop;
-      }
-      break;
-    case SECURITY_MODE_NOSEC:
-      keylen = 0;
-      break;
-    default:
+  /* Validate transport security mode from config/environment */
+  if (impl->security_mode == SECURITY_MODE_UNKNOWN) {
       iot_log_error (impl->lc, "Unknown security mode\n");
       res = 1;
       goto stop;
   }
 
   /* Run CoAP server */
-  run_server(impl, psk_key, keylen);
+  run_server(impl);
 
  stop:
   devsdk_service_stop (service, true, &e);
@@ -216,6 +202,10 @@ int main (int argc, char *argv[])
 
  end:
   devsdk_service_free (service);
+  if (impl->psk_key)
+  {
+    iot_data_free (impl->psk_key);
+  }
   free (impl);
   return res;
 }
