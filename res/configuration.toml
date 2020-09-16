@@ -13,19 +13,19 @@
   AsyncBufferSize = 16
 
 [Registry]
-  Host = 'localhost'
+  Host = 'edgex-core-consul'
   Port = 8500
   Type = 'consul'
   
 [Clients]
   [Clients.Data]
   Protocol = 'http'
-  Host = 'localhost'
+  Host = 'edgex-core-data'
   Port = 48080
 
   [Clients.Metadata]
   Protocol = 'http'
-  Host = 'localhost'
+  Host = 'edgex-core-metadata'
   Port = 48081
 
 [Device]

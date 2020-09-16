@@ -7,6 +7,7 @@
  */
 
 #include <errno.h>
+#include <float.h>
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
@@ -20,8 +21,9 @@
 #include "devsdk/devsdk.h"
 #include "device-coap.h"
 
-/* Maximum length of a string containing a signed 32 bit int. */
+/* Maximum length of a string containing numeric values. */
 #define INT32_STR_MAXLEN 10
+#define FLOAT64_STR_MAXLEN (DBL_MAX_10_EXP + 2)
 
 #define RESOURCE_SEG1 "a1r"
 #define MSG_PAYLOAD_INVALID "payload not valid"
@@ -79,6 +81,66 @@ resolve_address (const char *host, const char *service, coap_address_t *dst)
   return len;
 }
 
+/* Caller must free returned iot_data_t */
+static iot_data_t*
+read_data_float64 (uint8_t *data, size_t len)
+{
+  /* data conversion requires a null terminated string */
+  uint8_t data_str[FLOAT64_STR_MAXLEN+1];
+  memset (data_str, 0, FLOAT64_STR_MAXLEN+1);
+  memcpy (data_str, data, len);
+
+  char *endptr;
+  errno = 0;
+  double dbl_val = strtod ((char *)data_str, &endptr);
+
+  if (errno || (*endptr != '\0'))
+  {
+    iot_log_info (sdk_ctx->lc, "invalid float64 of len %u", len);
+    return NULL;
+  }
+
+  return iot_data_alloc_f64 (dbl_val);
+}
+
+/* Caller must free returned iot_data_t */
+static iot_data_t*
+read_data_int32 (uint8_t *data, size_t len)
+{
+  /* data conversion requires a null terminated string */
+  uint8_t data_str[INT32_STR_MAXLEN+1];
+  memset (data_str, 0, INT32_STR_MAXLEN+1);
+  memcpy (data_str, data, len);
+
+  char *endptr;
+  errno = 0;
+  long int_val = strtol ((char *)data_str, &endptr, 10);
+
+  /* validate strtol conversion, and ensure within range */
+  if (errno || (*endptr != '\0') || (int_val < INT32_MIN) || (int_val > INT32_MAX))
+  {
+    iot_log_info (sdk_ctx->lc, "invalid int32 of len %u", len);
+    return NULL;
+  }
+
+  return iot_data_alloc_i32 ((int32_t) int_val);
+}
+
+/* Caller must free returned iot_data_t */
+static iot_data_t*
+read_data_string (uint8_t *data, size_t len)
+{
+  /* must copy request data to append null terminator */
+  char *str_data = malloc (len + 1);
+  memcpy (str_data, data, len);
+  str_data[len] = '\0';
+
+  iot_data_t *iot_data = iot_data_alloc_string(str_data, IOT_DATA_COPY);
+  free (str_data);
+
+  return iot_data;
+}
+
 /*
  * Parse URI path, expect 3 segments: /a1r/{device-name}/{resource-name}
  *
@@ -107,7 +169,8 @@ parse_path (coap_pdu_t *request, devsdk_devices **device_ptr, devsdk_device_reso
       break;
     }
 
-    switch (i) {
+    switch (i)
+    {
     case 0:
       if (strcmp (seg, RESOURCE_SEG1))
       {
@@ -194,38 +257,39 @@ data_handler (coap_context_t *context, coap_resource_t *coap_resource,
     goto finish;
   }
 
-  /* only int32 supported at present */
-  iot_data_type_t resource_type = iot_typecode_type (resource->request->type);
-  if (resource_type != IOT_DATA_INT32)
-  {
-    iot_log_warn (sdk_ctx->lc, "unsupported resource type %d", resource_type);
-    response->code = COAP_RESPONSE_CODE (500);
-    goto finish;
-  }
-
-  /* read data */
+  iot_data_t *iot_data = NULL;
   size_t len;
   uint8_t *data;
-  if (!coap_get_data (request, &len, &data) || !len || (len > INT32_STR_MAXLEN))
+  if (!coap_get_data (request, &len, &data))
   {
     iot_log_info (sdk_ctx->lc, "invalid data of len %u", len);
-    response->code = COAP_RESPONSE_CODE (400);
-    coap_add_data (response, strlen (MSG_PAYLOAD_INVALID), (uint8_t *)MSG_PAYLOAD_INVALID);
-    goto finish;
+    /* finalized after else clause */
   }
-
-  /* data conversion requires a null terminated string */
-  uint8_t data_str[INT32_STR_MAXLEN+1];
-  memset (data_str, 0, INT32_STR_MAXLEN+1);
-  memcpy (data_str, data, len);
-
-  char *endptr;
-  errno = 0;
-  long int_val = strtol ((char *)data_str, &endptr, 10);
-  /* validate strtol conversion, and ensure within range */
-  if (errno || (*endptr != '\0') || (int_val < INT32_MIN) || (int_val > INT32_MAX))
+  else
   {
-    iot_log_info (sdk_ctx->lc, "invalid data of len %u", len);
+    iot_data_type_t resource_type = iot_typecode_type (resource->request->type);
+    switch (resource_type)
+    {
+      case IOT_DATA_ARRAY:
+        iot_data = iot_data_alloc_array(data, len, IOT_DATA_UINT8, IOT_DATA_REF);
+        break;
+      case IOT_DATA_FLOAT64:
+        iot_data = read_data_float64 (data, len);
+        break;
+      case IOT_DATA_INT32:
+        iot_data = read_data_int32 (data, len);
+        break;
+      case IOT_DATA_STRING:
+        iot_data = read_data_string (data, len);
+        break;
+      default:
+        iot_log_warn (sdk_ctx->lc, "unsupported resource type %d", resource_type);
+        response->code = COAP_RESPONSE_CODE (500);
+        goto finish;
+    }
+  }
+  if (!iot_data)
+  {
     response->code = COAP_RESPONSE_CODE (400);
     coap_add_data (response, strlen (MSG_PAYLOAD_INVALID), (uint8_t *)MSG_PAYLOAD_INVALID);
     goto finish;
@@ -234,7 +298,7 @@ data_handler (coap_context_t *context, coap_resource_t *coap_resource,
   /* generate and post an event with the data */
   devsdk_commandresult results[1];
   results[0].origin = 0;
-  results[0].value = iot_data_alloc_i32 ((int32_t) int_val);
+  results[0].value = iot_data;
 
   devsdk_post_readings (sdk_ctx->service, device->devname, resource->request->resname, results);
   iot_data_free (results[0].value);
@@ -246,8 +310,6 @@ data_handler (coap_context_t *context, coap_resource_t *coap_resource,
   {
     devsdk_free_devices (device);
   }
-
-  return;
 }
 
 int

@@ -4,9 +4,23 @@ model: "1"
 labels:
  - "coap"
  - "rest"
-description: "device sends int value asynchronously"
+description: "device sends float/int/string/binary value asynchronously"
 
 deviceResources:
+  - name: bin
+    description: "Byte array"
+    properties:
+      value:
+        { type: "Binary", readWrite: "W" }
+      units:
+        { type: "String", readWrite: "R"}
+  - name: float
+    description: "Float64 value"
+    properties:
+      value:
+        { type: "Float64", readWrite: "W" }
+      units:
+        { type: "String", readWrite: "R"}
   - name: int
     description: "Int32 value"
     properties:
@@ -14,8 +28,24 @@ deviceResources:
         { type: "Int32", readWrite: "W" }
       units:
         { type: "String", readWrite: "R"}
+  - name: str
+    description: "String value"
+    properties:
+      value:
+        { type: "String", readWrite: "W" }
+      units:
+        { type: "String", readWrite: "R"}
 
 deviceCommands:
+  - name: bin
+    get:
+      - { operation: "get", deviceResource: "bin"}
+  - name: float
+    get:
+      - { operation: "get", deviceResource: "float"}
   - name: int
     get:
       - { operation: "get", deviceResource: "int"}
+  - name: str
+    get:
+      - { operation: "get", deviceResource: "str"}
