@@ -1,11 +1,10 @@
-/* EdgeX device service to receive an int value asynchronously via CoAP server */
-
-/*
+/* Entry point for an EdgeX device service that provides a CoAP server to receive
+ * values asynchronously.
+ *
  * Copyright (c) 2020
  * Ken Bannister
  *
  * SPDX-License-Identifier: Apache-2.0
- *
  */
 
 #include <unistd.h>
@@ -42,6 +41,7 @@ static coap_security_mode_t find_security_mode
   }
 }
 
+/* Init callback; reads in config values to device driver */
 static bool coap_init
 (
   void *impl,

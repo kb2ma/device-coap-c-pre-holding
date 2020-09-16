@@ -36,9 +36,8 @@ typedef struct coap_driver
 {
   iot_logger_t * lc;
   devsdk_service_t *service;
-  coap_security_mode_t security_mode;   /**< CoAP transport security mode; from config,
-                                             must retain for internal use */
-  iot_data_t *psk_key;
+  coap_security_mode_t security_mode;   /**< CoAP transport security mode */
+  iot_data_t *psk_key;                  /**< PSK key as uint8_t array; unused if not PSK mode */
 } coap_driver;
 
 /**
