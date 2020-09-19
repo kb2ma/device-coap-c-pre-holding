@@ -19,7 +19,7 @@ device-coap creates a parameterized CoAP resource to which data may be posted:
 
 - `a1r` is short for "API v1 resource", as defined by device-rest-go.
 - `deviceName` refers to a `device` managed by the CoAP device service. For example, `res/configuration.toml` pre-defines a device named 'd1'.
-- `resourceName` refers to a `deviceResource` defined in the device profile. The `res/device-profile.yaml` profile provides generic integer, string, float, and binary resources.
+- `resourceName` refers to a `deviceResource` defined in the device profile. The `res/device-profile.yaml` profile provides generic integer and float resources.
 
 Payload data posted to one of these resources is type validated, and the resulting value then is sent into EdgeX via the Device SDK's asynchronous `post_readings` capability.
 

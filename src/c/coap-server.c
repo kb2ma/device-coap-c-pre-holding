@@ -18,7 +18,7 @@
 #include <netdb.h>
 
 #include <coap2/coap.h>
-#include "devsdk/devsdk.h"
+#include "edgex/devices.h"
 #include "device-coap.h"
 
 /* Maximum length of a string containing numeric values. */
@@ -126,21 +126,6 @@ read_data_int32 (uint8_t *data, size_t len)
   return iot_data_alloc_i32 ((int32_t) int_val);
 }
 
-/* Caller must free returned iot_data_t */
-static iot_data_t*
-read_data_string (uint8_t *data, size_t len)
-{
-  /* must copy request data to append null terminator */
-  char *str_data = malloc (len + 1);
-  memcpy (str_data, data, len);
-  str_data[len] = '\0';
-
-  iot_data_t *iot_data = iot_data_alloc_string(str_data, IOT_DATA_COPY);
-  free (str_data);
-
-  return iot_data;
-}
-
 /*
  * Parse URI path, expect 3 segments: /a1r/{device-name}/{resource-name}
  *
@@ -150,14 +135,15 @@ read_data_string (uint8_t *data, size_t len)
  * @return true if URI format OK, and device and resource found 
  */
 static bool
-parse_path (coap_pdu_t *request, devsdk_devices **device_ptr, devsdk_device_resources **resource_ptr)
+parse_path (coap_pdu_t *request, edgex_device **device_ptr, edgex_deviceresource **resource_ptr)
 {
   coap_string_t *uri_path = coap_get_uri_path (request);
   iot_log_debug (sdk_ctx->lc, "URI %s", uri_path->s);
   char *path = (char *)uri_path->s;
 
-  devsdk_devices *device = NULL;
-  devsdk_device_resources *resource = NULL;
+  edgex_device *device = NULL;
+  edgex_deviceprofile *profile = NULL;
+  edgex_deviceresource *resource = NULL;
   
   char *seg = strtok (path, "/");
   bool res = false;
@@ -179,19 +165,23 @@ parse_path (coap_pdu_t *request, devsdk_devices **device_ptr, devsdk_device_reso
       }
       break;
     case 1:
-      if (!(device = devsdk_get_device (sdk_ctx->service, seg)))
+      if (!(device = edgex_get_device_byname (sdk_ctx->service, seg)))
       {
         iot_log_info (sdk_ctx->lc, "device not found: %s", seg);
         goto end_for;
       }
-      resource = device->resources;
+      profile = device->profile;
       break;
     case 2:
-      for (; resource; resource = resource->next)
+      for (; profile; profile = profile->next)
       {
-        if (!strcmp (resource->request->resname, seg))
+        resource = profile->device_resources;
+        for (; resource; resource = resource->next)
         {
-          break;
+          if (!strcmp (resource->name, seg))
+          {
+            break;
+          }
         }
       }
       if (!resource)
@@ -220,7 +210,7 @@ parse_path (coap_pdu_t *request, devsdk_devices **device_ptr, devsdk_device_reso
   }
   else if (device)
   {
-    devsdk_free_devices (device);
+    edgex_free_device (device);
   }
   return res;
 }
@@ -249,8 +239,8 @@ data_handler (coap_context_t *context, coap_resource_t *coap_resource,
   }
 
   /* Validate URI, expect 3 segments: /a1r/{device-name}/{resource-name} */
-  devsdk_devices *device = NULL;
-  devsdk_device_resources *resource = NULL;
+  edgex_device *device = NULL;
+  edgex_deviceresource *resource = NULL;
   if (!parse_path (request, &device, &resource))
   {
     response->code = COAP_RESPONSE_CODE (404);
@@ -267,23 +257,16 @@ data_handler (coap_context_t *context, coap_resource_t *coap_resource,
   }
   else
   {
-    iot_data_type_t resource_type = iot_typecode_type (resource->request->type);
-    switch (resource_type)
+    switch (resource->properties->value->type)
     {
-      case IOT_DATA_ARRAY:
-        iot_data = iot_data_alloc_array(data, len, IOT_DATA_UINT8, IOT_DATA_REF);
-        break;
-      case IOT_DATA_FLOAT64:
+      case Edgex_Float64:
         iot_data = read_data_float64 (data, len);
         break;
-      case IOT_DATA_INT32:
+      case Edgex_Int32:
         iot_data = read_data_int32 (data, len);
         break;
-      case IOT_DATA_STRING:
-        iot_data = read_data_string (data, len);
-        break;
       default:
-        iot_log_warn (sdk_ctx->lc, "unsupported resource type %d", resource_type);
+        iot_log_warn (sdk_ctx->lc, "unsupported resource type %d", resource->properties->value->type);
         response->code = COAP_RESPONSE_CODE (500);
         goto finish;
     }
@@ -300,7 +283,7 @@ data_handler (coap_context_t *context, coap_resource_t *coap_resource,
   results[0].origin = 0;
   results[0].value = iot_data;
 
-  devsdk_post_readings (sdk_ctx->service, device->devname, resource->request->resname, results);
+  devsdk_post_readings (sdk_ctx->service, device->name, resource->name, results);
   iot_data_free (results[0].value);
 
   response->code = COAP_RESPONSE_CODE (204);
@@ -308,7 +291,7 @@ data_handler (coap_context_t *context, coap_resource_t *coap_resource,
  finish:
   if (device)
   {
-    devsdk_free_devices (device);
+    edgex_free_device (device);
   }
 }
 
