@@ -9,7 +9,7 @@ The device-coap-c service (_device-coap_ for short) is modeled after the HTTP ba
 device-coap uses DTLS for secure communication to devices. It is written in C, and relies on the well known [libcoap](https://libcoap.net/) library.
 
 
-## CoAP Data Resource
+## Resources
 
 device-coap creates a parameterized CoAP resource to which data may be posted:
 
@@ -19,11 +19,18 @@ device-coap creates a parameterized CoAP resource to which data may be posted:
 
 - `a1r` is short for "API v1 resource", as defined by device-rest-go.
 - `deviceName` refers to a `device` managed by the CoAP device service. For example, `res/configuration.toml` pre-defines a device named 'd1'.
-- `resourceName` refers to a `deviceResource` defined in the device profile. The `res/device-profile.yaml` profile provides generic integer and float resources.
+- `resourceName` refers to a `deviceResource` defined in the device profile, as described in the sub-section below.
 
 Payload data posted to one of these resources is type validated, and the resulting value then is sent into EdgeX via the Device SDK's asynchronous `post_readings` capability.
 
-See the _Testing_ section below for example use.
+[device-profile.yaml](./res/device-profile.yaml) defines the resources for EdgeX. The table below shows the available resources and correspondence with CoAP.
+
+| Resource| Type   | EdgeX MediaType<br>CoAP Content-Format|
+|---------|--------|---------------------------------------|
+| int     | Int32  | text/plain                            |
+| float   | Float64| text/plain                            |
+
+>_Note:_ You must define the Content-Format option in the CoAP POST request. See the _Testing_ section below for example use.
 
 
 ## Configuration
@@ -43,7 +50,7 @@ This section describes properties in [configuration.toml](./res/configuration.to
 device-coap accepts only a single pre-shared key. `PskKey` is ignored if `SecurityMode` is 'NoSec'. device-coap does not presently support DTLS raw public key or certificate modes.
 
 ### DeviceList
-The `DeviceList` configuration is standard except that the `DeviceList.Protocols` can be empty. The following is a sample `DeviceList` that works with the sample device profiles referenced below.
+The `DeviceList` section pre-defines the 'd1' device.
 
 ```toml
 # Pre-define Devices
@@ -55,12 +62,6 @@ The `DeviceList` configuration is standard except that the `DeviceList.Protocols
   [DeviceList.Protocols]
     [DeviceList.Protocols.other]
 ```
-
-## Device Profile
-
-As with all device services, the `device profile` is where the _Device Name_, _Device Resources_ and _Device Commands_ are defined. The parameterized REST endpoint described above references these definitions. See the sample profile in [device-profile.yaml](./res/device-profile.yaml), which defines generic integer, string, float, and binary resources.
-
-> *Notes: The `coreCommands` section is omitted since this device service does not support Commanding. Also, the `deviceCommands` section only requires the `get` operation.*
 
 ## Docker Integration
 
@@ -100,11 +101,11 @@ You can use simulated data to test this service with libcoap's `coap-client` com
 
 **NoSec**
 ```
-   $ coap-client -m post -e 1001 coap://127.0.0.1/a1r/d1/int
+   $ coap-client -m post -t 0 -e 1001 coap://127.0.0.1/a1r/d1/int
 ```
 **PSK**
 ```
-   $ coap-client -m post -u r17 -k nitt4agm2c2tatcy -e 1001 coaps://127.0.0.1/a1r/d1/int
+   $ coap-client -m post -u r17 -k nitt4agm2c2tatcy -t 0 -e 1001 coaps://127.0.0.1/a1r/d1/int
 ```
 
   * For DTLS PSK, a CoAP client must include a user identity via the `-u` option as well as the same key the server uses. Presently, the device-coap server does not evaluate the identity, only the key. Also, `coap-client` reads the key as a literal string, so characters must be readable from the command line. Finally, notice the protocol in the address is `coaps`. This protocol uses UDP port 5684 rather than 5683 for protocol `coap`.

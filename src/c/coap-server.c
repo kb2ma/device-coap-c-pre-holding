@@ -10,6 +10,7 @@
 #include <float.h>
 #include <signal.h>
 #include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -27,6 +28,8 @@
 
 #define RESOURCE_SEG1 "a1r"
 #define MSG_PAYLOAD_INVALID "payload not valid"
+#define MEDIATYPE_TEXT_PLAIN "text/plain"
+#define CONTENT_FORMAT_UNDEFINED UINT16_MAX
 
 static coap_driver *sdk_ctx;
 
@@ -257,6 +260,22 @@ data_handler (coap_context_t *context, coap_resource_t *coap_resource,
   }
   else
   {
+    /* Validate and read payload */
+    uint16_t cf = CONTENT_FORMAT_UNDEFINED;
+    coap_opt_iterator_t it;
+    coap_opt_t *opt = coap_check_option (request, COAP_OPTION_CONTENT_FORMAT, &it);
+    if (opt)
+    {
+      cf = coap_decode_var_bytes (coap_opt_value (opt), coap_opt_length (opt));
+    }
+    /* expect text for float64 and int32 */
+    if (!strcmp (resource->properties->value->mediaType, MEDIATYPE_TEXT_PLAIN)
+        && (cf != COAP_MEDIATYPE_TEXT_PLAIN))
+    {
+      response->code = COAP_RESPONSE_CODE (415);
+      goto finish;
+    }
+
     switch (resource->properties->value->type)
     {
       case Edgex_Float64:
