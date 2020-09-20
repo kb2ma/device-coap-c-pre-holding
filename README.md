@@ -29,6 +29,7 @@ Payload data posted to one of these resources is type validated, and the resulti
 |---------|--------|---------------------------------------|
 | int     | Int32  | text/plain                            |
 | float   | Float64| text/plain                            |
+| json    | String | application/json                      |
 
 >_Note:_ You must define the Content-Format option in the CoAP POST request. See the _Testing_ section below for example use.
 

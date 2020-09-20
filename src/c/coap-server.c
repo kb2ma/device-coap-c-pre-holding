@@ -29,6 +29,7 @@
 #define RESOURCE_SEG1 "a1r"
 #define MSG_PAYLOAD_INVALID "payload not valid"
 #define MEDIATYPE_TEXT_PLAIN "text/plain"
+#define MEDIATYPE_APP_JSON "application/json"
 #define CONTENT_FORMAT_UNDEFINED UINT16_MAX
 
 static coap_driver *sdk_ctx;
@@ -127,6 +128,21 @@ read_data_int32 (uint8_t *data, size_t len)
   }
 
   return iot_data_alloc_i32 ((int32_t) int_val);
+}
+
+/* Caller must free returned iot_data_t */
+static iot_data_t*
+read_data_string (uint8_t *data, size_t len)
+{
+  /* must copy request data to append null terminator */
+  char *str_data = malloc (len + 1);
+  memcpy (str_data, data, len);
+  str_data[len] = '\0';
+
+  iot_data_t *iot_data = iot_data_alloc_string(str_data, IOT_DATA_COPY);
+  free (str_data);
+
+  return iot_data;
 }
 
 /*
@@ -260,7 +276,7 @@ data_handler (coap_context_t *context, coap_resource_t *coap_resource,
   }
   else
   {
-    /* Validate and read payload */
+    /* Received CoAP content format option must match EdgeX media type string */
     uint16_t cf = CONTENT_FORMAT_UNDEFINED;
     coap_opt_iterator_t it;
     coap_opt_t *opt = coap_check_option (request, COAP_OPTION_CONTENT_FORMAT, &it);
@@ -268,14 +284,31 @@ data_handler (coap_context_t *context, coap_resource_t *coap_resource,
     {
       cf = coap_decode_var_bytes (coap_opt_value (opt), coap_opt_length (opt));
     }
-    /* expect text for float64 and int32 */
-    if (!strcmp (resource->properties->value->mediaType, MEDIATYPE_TEXT_PLAIN)
-        && (cf != COAP_MEDIATYPE_TEXT_PLAIN))
+
+    if (!strcmp (MEDIATYPE_TEXT_PLAIN, resource->properties->value->mediaType))
     {
-      response->code = COAP_RESPONSE_CODE (415);
+      if (cf != COAP_MEDIATYPE_TEXT_PLAIN)
+      {
+        response->code = COAP_RESPONSE_CODE (415);
+        goto finish;
+      }
+    }
+    else if (!strcmp (MEDIATYPE_APP_JSON, resource->properties->value->mediaType))
+    {
+      if (cf != COAP_MEDIATYPE_APPLICATION_JSON)
+      {
+        response->code = COAP_RESPONSE_CODE (415);
+        goto finish;
+      }
+    }
+    else
+    {
+      iot_log_error (sdk_ctx->lc, "unsupported media type %d", resource->properties->value->mediaType);
+      response->code = COAP_RESPONSE_CODE (500);
       goto finish;
     }
 
+    /* Validate and read payload */
     switch (resource->properties->value->type)
     {
       case Edgex_Float64:
@@ -284,8 +317,11 @@ data_handler (coap_context_t *context, coap_resource_t *coap_resource,
       case Edgex_Int32:
         iot_data = read_data_int32 (data, len);
         break;
+      case Edgex_String:
+        iot_data = read_data_string (data, len);
+        break;
       default:
-        iot_log_warn (sdk_ctx->lc, "unsupported resource type %d", resource->properties->value->type);
+        iot_log_error (sdk_ctx->lc, "unsupported resource type %d", resource->properties->value->type);
         response->code = COAP_RESPONSE_CODE (500);
         goto finish;
     }

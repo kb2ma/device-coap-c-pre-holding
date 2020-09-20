@@ -21,6 +21,13 @@ deviceResources:
         { type: "Int32", readWrite: "W", mediaType: "text/plain" }
       units:
         { type: "String", readWrite: "R"}
+  - name: json
+    description: "JSON message"
+    properties:
+      value:
+        { type: "String", readWrite: "W", mediaType: "application/json" }
+      units:
+        { type: "String", readWrite: "R"}
 
 deviceCommands:
   - name: float
@@ -29,3 +36,6 @@ deviceCommands:
   - name: int
     get:
       - { operation: "get", deviceResource: "int"}
+  - name: json
+    get:
+      - { operation: "get", deviceResource: "json"}
