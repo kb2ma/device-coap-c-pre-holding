@@ -1,7 +1,7 @@
 
 .PHONY: build test clean docker
 
-MICROSERVICES=build/release/device-coap
+MICROSERVICES=build/release/device-coap build/debug/device-coap
 .PHONY: $(MICROSERVICES)
 
 DOCKERS=docker_device_coap_c
@@ -14,14 +14,12 @@ build: ${MICROSERVICES}
 
 build/release/device-coap:
 	    scripts/build.sh
-	    cp build/release/device-coap .
 
 test:
 	    @echo $(MICROSERVICES)
 
 clean:
 	    rm -f $(MICROSERVICES)
-	    rm -f device-coap
 
 docker: $(DOCKERS)
 
@@ -37,10 +35,8 @@ build-debug: build/debug/device-coap
 
 build/debug/device-coap:
 	    scripts/build_debug.sh
-	    cp build/debug/device-coap .
 
 clean-debug:
 	    rm -f build/debug/device-coap
-	    rm -f device-coap-c
 
 .PHONY: build-debug clean-debug
