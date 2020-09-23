@@ -80,7 +80,7 @@ Below is an example entry for a docker-compose template with the rest of the Edg
 
 ```
   device-coap:
-    image: kb2ma/device-coap:latest
+    image: kb2ma/docker-device-coap-c:0.2-dev
     ports:
       - "127.0.0.1:49750:49750"
       - "0.0.0.0:5684:5684/udp"

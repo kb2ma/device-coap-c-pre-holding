@@ -207,5 +207,6 @@ int main (int argc, char *argv[])
     iot_data_free (impl->psk_key);
   }
   free (impl);
+  puts ("Exiting gracefully");
   return res;
 }
