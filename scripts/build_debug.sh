@@ -12,5 +12,5 @@ cd $ROOT
 mkdir -p $ROOT/build/debug
 cd $ROOT/build/debug
 cmake -DCMAKE_BUILD_TYPE=Debug $ROOT/src/c
-make 2>&1 | tee debug.log
+make VERBOSE=1 2>&1 | tee debug.log
 
