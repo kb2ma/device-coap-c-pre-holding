@@ -127,12 +127,12 @@ This section describes how to build and run a device-coap executable independent
 
 device-coap depends on libcoap and tinydtls. See [build_deps.sh](scripts/build_deps.sh) to download and build them. As with any C based EdgeX device project, device-coap also depends on the EdgeX [C SDK](https://github.com/edgexfoundry/device-sdk-c/blob/master) for its SDK library and headers. Finally, see [build.sh](scripts/build.sh) and [build_debug.sh](scripts/build_debug.sh) to build device-coap itself. These scripts may be invoked via `make build` and `make build-debug` respectively.
 
->_Note:_ Service configuration in `configuration.toml` must be customized for a separate device-coap executable. For the `Service->Host` parameter, use '172.17.0.1'. For the `Host` parameter in the `Registry` and `Clients` sections, use 'localhost'.
-
 ### Running
 
 Simply run the generated executable. The example below was built with the `build_debug.sh` script.
 
 ```
-   $ build/debug/device-coap
+   $ build/debug/device-coap -f configuration-native.toml
 ```
+
+>_Note:_ Service configuration in `configuration-native.toml` is customized for a separate device-coap executable. Uses '172.17.0.1' for the `Service->Host` parameter. Uses 'localhost' for the `Host` parameter in the `Registry` and `Clients` sections.
