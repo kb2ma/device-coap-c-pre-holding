@@ -74,6 +74,11 @@ then
   wget https://github.com/edgexfoundry/device-sdk-c/archive/v1.3.0-dev.3.zip
   unzip v1.3.0-dev.3.zip
   cd device-sdk-c-1.3.0-dev.3
+
+  # patch for missing yxml.h header
+  # see https://github.com/edgexfoundry/device-sdk-c/issues/295
+  patch -p1 < /device-coap/scripts/build_sh_patch
+
   ./scripts/build.sh
   cp -rf include/* /usr/include/
   cp build/release/c/libcsdk.so /usr/lib/
