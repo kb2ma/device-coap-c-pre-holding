@@ -164,9 +164,13 @@ int main (int argc, char *argv[])
     if (strcmp (argv[n], "-h") == 0 || strcmp (argv[n], "--help") == 0)
     {
       printf ("Usage: device-coap [options]\n");
-      printf ("\n");
-      printf ("Options:\n");
-      printf ("  -h, --help\t\tShow this text\n");
+      printf ("\nOptions:\n");
+      printf ("  -r, --registry  set registry URL\n");
+      printf ("  -i, --instance  set instance name\n");
+      printf ("  -p, --profile   set profile file\n");
+      printf ("  -c, --confdir   set configuration directory\n");
+      printf ("  -f, --file      set configuration file\n");
+      printf ("  -h, --help      show this text\n");
       goto end;
     }
     else
