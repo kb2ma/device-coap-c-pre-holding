@@ -45,16 +45,16 @@ handle_sig (int signum)
   quit = 1;
 }
 
-/* Builds dst struct from host/port */
+/* Builds libcoap address struct from host/port */
 static int
-resolve_address (const char *host, const char *service, coap_address_t *dst)
+resolve_address (const char *host, const char *service, coap_address_t *lib_addr)
 {
   struct addrinfo *res, *ainfo;
   struct addrinfo hints;
   int error, len=-1;
 
   memset (&hints, 0, sizeof (hints));
-  memset (dst, 0, sizeof (*dst));
+  memset (lib_addr, 0, sizeof (*lib_addr));
   hints.ai_socktype = SOCK_DGRAM;
   hints.ai_family = AF_UNSPEC;
 
@@ -68,12 +68,14 @@ resolve_address (const char *host, const char *service, coap_address_t *dst)
 
   for (ainfo = res; ainfo != NULL; ainfo = ainfo->ai_next)
   {
+    len = lib_addr->size = ainfo->ai_addrlen;
     switch (ainfo->ai_family)
     {
     case AF_INET6:
+      memcpy (&lib_addr->addr.sin6, ainfo->ai_addr, lib_addr->size);
+      goto finish;
     case AF_INET:
-      len = dst->size = ainfo->ai_addrlen;
-      memcpy (&dst->addr.sin6, ainfo->ai_addr, dst->size);
+      memcpy (&lib_addr->addr.sin, ainfo->ai_addr, lib_addr->size);
       goto finish;
     default:
       ;
@@ -354,9 +356,8 @@ int
 run_server (coap_driver *driver)
 {
   coap_context_t  *ctx = NULL;
-  coap_address_t dst;
+  coap_address_t listen_addr;
   coap_resource_t *resource = NULL;
-  coap_endpoint_t *endpoint = NULL;
   int result = EXIT_FAILURE;
   sdk_ctx = driver;
   struct sigaction sa;
@@ -399,15 +400,13 @@ run_server (coap_driver *driver)
     proto = COAP_PROTO_DTLS;
     port = "5684";
   }
-  if (resolve_address ("0.0.0.0", port, &dst) < 0) {
-    iot_log_error (sdk_ctx->lc, "failed to resolve address");
+  if (resolve_address ("0.0.0.0", port, &listen_addr) < 0) {
+    iot_log_error (sdk_ctx->lc, "failed to resolve listen address");
     goto finish;
   }
 
-  /* create CoAP context and a client session */
-  ctx = coap_new_context (NULL);
-
-  if (!ctx || !(endpoint = coap_new_endpoint (ctx, &dst, proto)))
+  /* setup libcoap for a server */
+  if (!(ctx = coap_new_context (NULL)))
   {
     iot_log_error (sdk_ctx->lc, "cannot initialize context");
     goto finish;
@@ -425,6 +424,12 @@ run_server (coap_driver *driver)
       iot_log_error (sdk_ctx->lc, "cannot initialize PSK");
       goto finish;
     }
+  }
+
+  if (!(coap_new_endpoint (ctx, &listen_addr, proto)))
+  {
+    iot_log_error (sdk_ctx->lc, "cannot initialize listen endpoint");
+    goto finish;
   }
 
   /* Creates handler for PUT, which is not what we want... */
