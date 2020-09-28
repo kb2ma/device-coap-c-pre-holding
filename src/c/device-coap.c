@@ -16,8 +16,9 @@
 #define ERR_CHECK(x) if (x.code) { fprintf (stderr, "Error: %d: %s\n", x.code, x.reason); devsdk_service_free (service); free (impl); return x.code; }
 
 #define ERR_BUFSZ 1024
-#define SECURITY_MODE_KEY "SecurityMode"
-#define PSK_KEY_KEY "PskKey"
+#define COAP_BIND_ADDR_KEY "CoapBindAddr"
+#define SECURITY_MODE_KEY  "SecurityMode"
+#define PSK_KEY_KEY        "PskKey"
 
 
 /* Looks up security mode enum value from configuration text value */
@@ -73,6 +74,19 @@ static bool coap_init
   else
   {
     driver->psk_key = NULL;
+  }
+
+  /* CoAP server bind address as text */
+  const char *bind_addr = iot_data_string_map_get_string (config, COAP_BIND_ADDR_KEY);
+  if (bind_addr)
+  {
+    driver->coap_bind_addr = iot_data_alloc_string (bind_addr, IOT_DATA_COPY);
+  }
+  else
+  {
+    iot_log_error (lc, "CoAP bind address not in configuration");
+    driver->coap_bind_addr = NULL;
+    return false;
   }
 
   iot_log_debug (lc, "Init complete");
@@ -183,6 +197,7 @@ int main (int argc, char *argv[])
 
   /* Create default Driver config and start the device service */
   iot_data_t *driver_map = iot_data_alloc_map (IOT_DATA_STRING);
+  iot_data_string_map_add (driver_map, COAP_BIND_ADDR_KEY, iot_data_alloc_string ("0.0.0.0", IOT_DATA_REF));
   iot_data_string_map_add (driver_map, SECURITY_MODE_KEY, iot_data_alloc_string ("NoSec", IOT_DATA_REF));
   iot_data_string_map_add (driver_map, PSK_KEY_KEY, iot_data_alloc_string ("", IOT_DATA_REF));
 
@@ -206,6 +221,10 @@ int main (int argc, char *argv[])
 
  end:
   devsdk_service_free (service);
+  if (impl->coap_bind_addr)
+  {
+    iot_data_free (impl->coap_bind_addr);
+  }
   if (impl->psk_key)
   {
     iot_data_free (impl->psk_key);

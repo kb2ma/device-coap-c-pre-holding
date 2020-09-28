@@ -45,8 +45,12 @@
     Interval = '30s'
 
 [Driver]
+  # Supports IPv4 or IPv6 if provided by network infrastructure. Use '0.0.0.0'
+  # for any IPv4 interface, or '::' for any IPv6 interface.
+  CoapBindAddr = '0.0.0.0'
+  # Choose 'PSK' or 'NoSec'
   SecurityMode = 'NoSec'
-  # key is up to 16 arbitrary bytes; must be base64 encoded here
+  # Key is up to 16 arbitrary bytes; must be base64 encoded here
   PskKey = 'ME42aURHZ3Uva0Y0eG9lZw=='
 
 [Logging]

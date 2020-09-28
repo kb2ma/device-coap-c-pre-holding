@@ -356,7 +356,7 @@ int
 run_server (coap_driver *driver)
 {
   coap_context_t  *ctx = NULL;
-  coap_address_t listen_addr;
+  coap_address_t bind_addr;
   coap_resource_t *resource = NULL;
   int result = EXIT_FAILURE;
   sdk_ctx = driver;
@@ -400,8 +400,8 @@ run_server (coap_driver *driver)
     proto = COAP_PROTO_DTLS;
     port = "5684";
   }
-  if (resolve_address ("0.0.0.0", port, &listen_addr) < 0) {
-    iot_log_error (sdk_ctx->lc, "failed to resolve listen address");
+  if (resolve_address (iot_data_string (driver->coap_bind_addr), port, &bind_addr) < 0) {
+    iot_log_error (sdk_ctx->lc, "failed to resolve CoAP bind address");
     goto finish;
   }
 
@@ -419,14 +419,15 @@ run_server (coap_driver *driver)
     iot_data_array_iter (driver->psk_key, &array_iter);
     iot_data_array_iter_next(&array_iter);
 
-    if (!(coap_context_set_psk (ctx, "", (uint8_t *)iot_data_array_iter_value (&array_iter), iot_data_array_length (driver->psk_key))))
+    if (!(coap_context_set_psk (ctx, "", (uint8_t *)iot_data_array_iter_value (&array_iter),
+                                iot_data_array_length (driver->psk_key))))
     {
       iot_log_error (sdk_ctx->lc, "cannot initialize PSK");
       goto finish;
     }
   }
 
-  if (!(coap_new_endpoint (ctx, &listen_addr, proto)))
+  if (!(coap_new_endpoint (ctx, &bind_addr, proto)))
   {
     iot_log_error (sdk_ctx->lc, "cannot initialize listen endpoint");
     goto finish;
@@ -445,7 +446,8 @@ run_server (coap_driver *driver)
   sigaction (SIGINT, &sa, NULL);
   sigaction (SIGTERM, &sa, NULL);
 
-  iot_log_info (sdk_ctx->lc, "CoAP %s server started", driver->psk_key ? "PSK" : "nosec");
+  iot_log_info (sdk_ctx->lc, "CoAP %s server started on %s", driver->psk_key ? "PSK" : "nosec",
+                iot_data_string (driver->coap_bind_addr));
 
   while (!quit)
   {
