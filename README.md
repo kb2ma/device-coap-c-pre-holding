@@ -39,16 +39,26 @@ Payload data posted to one of these resources is type validated, and the resulti
 This section describes properties in [configuration.toml](./res/configuration.toml) as used by device-coap. See the _Configuration and Registry_ section of the EdgeX documentation for background.
 
 ### Driver
-`SecurityMode` defines CoAP client-server security. Use 'PSK' for pre-shared key, or 'NoSec' for no security. See the example below.
+
+Below are the recognized properties for the Driver section, followed by an example.
+
+| Key         | Value                                                                             |
+|-------------|-----------------------------------------------------------------------------------|
+| CoapBindAddr| Address on which CoAP server listens for devices                                  |
+| SecurityMode| DTLS client-server security type. Does not support raw public key or certificates.|
+| PskKey      | Pre-shared key. Accepts only a single key, ignored in NoSec mode.                 |
+
 
 ```
 [Driver]
+  # Supports IPv4 or IPv6 if provided by network infrastructure. Use '0.0.0.0'
+  # for any IPv4 interface, or '::' for any IPv6 interface.
+  CoapBindAddr = '0.0.0.0'
+  # Choose 'PSK' or 'NoSec'
   SecurityMode = 'PSK'
-  # key is up to 16 arbitrary bytes; must be base64 encoded here
-  PskKey = '960CWMcJpaM0VLDXPNAf5A=='
+  # Key is up to 16 arbitrary bytes; must be base64 encoded here
+  PskKey = 'ME42aURHZ3Uva0Y0eG9lZw=='
 ```
-
-device-coap accepts only a single pre-shared key. `PskKey` is ignored if `SecurityMode` is 'NoSec'. device-coap does not presently support DTLS raw public key or certificate modes.
 
 ### DeviceList
 The `DeviceList` section pre-defines the 'd1' device.
