@@ -4,7 +4,7 @@ model: "1"
 labels:
  - "coap"
  - "rest"
-description: "device sends float/int/string/binary value asynchronously"
+description: "device sends float/int/JSON value asynchronously"
 
 deviceResources:
   - name: float
