@@ -59,8 +59,8 @@
 # Pre-define Devices
 [[DeviceList]]
   Name = 'd1'
-  Profile = 'Coap-Device'
-  Description = 'Coap Data Generator Device'
+  Profile = 'DataType-Device'
+  Description = 'Example generic data type device'
   Labels = [ "coap", "rest" ]
   [DeviceList.Protocols]
     [DeviceList.Protocols.other]

@@ -1,41 +1,27 @@
-name: "Coap-Device"
-manufacturer: "Open Sourcery"
-model: "1"
-labels:
- - "coap"
- - "rest"
-description: "device sends float/int/JSON value asynchronously"
+name: "DataType-Device"
+description: "Example device that sends generic float/int/JSON values autonomously"
 
+# All properties must include the properties value attribute 'readWrite' of "R"
+# for a device to send readings autonomously.
 deviceResources:
   - name: float
     description: "Float64 value"
     properties:
       value:
-        { type: "Float64", readWrite: "W", mediaType: "text/plain" }
+        { type: "Float64", readWrite: "R", mediaType: "text/plain" }
       units:
         { type: "String", readWrite: "R"}
   - name: int
     description: "Int32 value"
     properties:
       value:
-        { type: "Int32", readWrite: "W", mediaType: "text/plain" }
+        { type: "Int32", readWrite: "R", mediaType: "text/plain" }
       units:
         { type: "String", readWrite: "R"}
   - name: json
     description: "JSON message"
     properties:
       value:
-        { type: "String", readWrite: "W", mediaType: "application/json" }
+        { type: "String", readWrite: "R", mediaType: "application/json" }
       units:
         { type: "String", readWrite: "R"}
-
-deviceCommands:
-  - name: float
-    get:
-      - { operation: "get", deviceResource: "float"}
-  - name: int
-    get:
-      - { operation: "get", deviceResource: "int"}
-  - name: json
-    get:
-      - { operation: "get", deviceResource: "json"}
