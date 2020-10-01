@@ -1,4 +1,4 @@
-name: "DataType-Device"
+name: "example.datatype"
 description: "Example device that sends generic float/int/JSON values autonomously"
 
 # All properties must include the properties value attribute 'readWrite' of "R"
