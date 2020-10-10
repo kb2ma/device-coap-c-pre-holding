@@ -23,9 +23,13 @@ device-coap creates a parameterized CoAP resource to which data may be posted:
 
 Payload data posted to one of these resources is type validated, and the resulting value then is sent into EdgeX via the Device SDK's asynchronous `post_readings` capability.
 
-[device-profile.yaml](./res/device-profile.yaml) defines the resources for EdgeX. The table below shows the available resources and correspondence with CoAP.
+## Profiles
 
-| Resource| Type   | EdgeX MediaType<br>CoAP Content-Format|
+[example-datatype.yaml](./res/example-datatype.yaml) defines  generic resources for data types. The table below shows the available resource names and correspondence with CoAP attributes. 
+
+For example, the 'int' resource name means that EdgeX provides a CoAP resource, `/a1r/{deviceName}/int`. This resource accepts an integer encoded as text, like `42`.
+
+| resourceName | Type   | EdgeX MediaType<br>CoAP Content-Format|
 |---------|--------|---------------------------------------|
 | int     | Int32  | text/plain                            |
 | float   | Float64| text/plain                            |
@@ -127,7 +131,7 @@ You can use simulated data to test this service with libcoap's `coap-client` com
 
 ### Zephyr CoAP client
 
-Also see my Zephyr based [edgex-coap-peer](https://github.com/kb2ma/edgex-coap-peer) repository for a CoAP client usable on an IoT device. The client posts integer data to `/a1r/d1/int`.
+Also see my Zephyr based [edgex-coap-peer](https://github.com/kb2ma/edgex-coap-peer) repository for a simple CoAP client usable on an IoT device. The client posts integer data for the example profile above, to `/a1r/d1/int`.
 
 ## Development
 

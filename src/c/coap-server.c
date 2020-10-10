@@ -451,7 +451,7 @@ run_server (coap_driver *driver)
 
   while (!quit)
   {
-    coap_io_process (ctx, 0);
+    coap_io_process (ctx, COAP_IO_WAIT);
   }
 
   result = EXIT_SUCCESS;
