@@ -120,7 +120,7 @@ You can use simulated data to test this service with libcoap's `coap-client` com
 ```
 **PSK**
 ```
-   $ coap-client -m post -u r17 -k nitt4agm2c2tatcy -t 0 -e 1001 coaps://127.0.0.1/a1r/d1/int
+   $ coap-client -m post -u r17 -k 0N6iDGgu/kF4xoeg -t 0 -e 1001 coaps://127.0.0.1/a1r/d1/int
 ```
 
   * For DTLS PSK, a CoAP client must include a user identity via the `-u` option as well as the same key the server uses. Presently, the device-coap server does not evaluate the identity, only the key. Also, `coap-client` reads the key as a literal string, so characters must be readable from the command line. Finally, notice the protocol in the address is `coaps`. This protocol uses UDP port 5684 rather than 5683 for protocol `coap`.
@@ -132,6 +132,10 @@ You can use simulated data to test this service with libcoap's `coap-client` com
 ### Zephyr CoAP client
 
 Also see my Zephyr based [edgex-coap-peer](https://github.com/kb2ma/edgex-coap-peer) repository for a simple CoAP client usable on an IoT device. The client posts integer data for the example profile above, to `/a1r/d1/int`.
+
+### RIOT CoAP client
+
+Also see my RIOT based [riot-edgex-coap-client](https://github.com/kb2ma/riot-edgex-coap-client) repository for a more realistic CoAP client. The client posts a temperature measurement from a sensor every 60 seconds to `/a1r/d1/float`.
 
 ## Development
 

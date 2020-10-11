@@ -446,7 +446,7 @@ run_server (coap_driver *driver)
   sigaction (SIGINT, &sa, NULL);
   sigaction (SIGTERM, &sa, NULL);
 
-  iot_log_info (sdk_ctx->lc, "CoAP %s server started on %s", driver->psk_key ? "PSK" : "nosec",
+  iot_log_info (sdk_ctx->lc, "CoAP %s server started on %s", driver->psk_key ? "PSK" : "NoSec",
                 iot_data_string (driver->coap_bind_addr));
 
   while (!quit)
