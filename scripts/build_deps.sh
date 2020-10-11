@@ -50,9 +50,9 @@ patch -p1 < /device-coap/scripts/FindTinyDTLS_cmake_patch
 patch -p1 < /device-coap/scripts/config_h_in_patch
 
 mkdir -p build && cd build
-cmake -DDTLS_BACKEND=tinydtls -DUSE_VENDORED_TINYDTLS=OFF -DENABLE_TESTS=OFF \
-      -DENABLE_EXAMPLES=OFF -DENABLE_DOCS=OFF -DCMAKE_BUILD_TYPE=Release \
-      -DBUILD_SHARED_LIBS=ON \
+cmake -DWITH_EPOLL=OFF -DDTLS_BACKEND=tinydtls -DUSE_VENDORED_TINYDTLS=OFF \
+      -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_DOCS=OFF \
+      -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON \
       ..
 make && make install
 
@@ -71,13 +71,9 @@ then
   make install
   cd /device-coap/deps
 
-  wget https://github.com/edgexfoundry/device-sdk-c/archive/v1.3.0-dev.3.zip
-  unzip v1.3.0-dev.3.zip
-  cd device-sdk-c-1.3.0-dev.3
-
-  # patch for missing yxml.h header
-  # see https://github.com/edgexfoundry/device-sdk-c/issues/295
-  patch -p1 < /device-coap/scripts/build_sh_patch
+  wget https://github.com/edgexfoundry/device-sdk-c/archive/v1.2.2.zip
+  unzip v1.2.2.zip
+  cd device-sdk-c-1.2.2
 
   ./scripts/build.sh
   cp -rf include/* /usr/include/

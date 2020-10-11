@@ -93,8 +93,6 @@ static bool coap_init
   return true;
 }
 
-static void coap_reconfigure (void *impl, const iot_data_t *config) {}
-
 static bool coap_get_handler
 (
   void *impl,
@@ -153,16 +151,15 @@ int main (int argc, char *argv[])
   devsdk_callbacks coapImpls =
   {
     coap_init,
-    coap_reconfigure,
     NULL,              /* discovery */
     coap_get_handler,
     coap_put_handler,
     coap_stop,
+    NULL,              /* auto-event started */
+    NULL,              /* auto-event stopped */
     NULL,              /* device added */
     NULL,              /* device updated */
-    NULL,              /* device removed */
-    NULL,              /* auto-event started */
-    NULL               /* auto-event stopped */
+    NULL               /* device removed */
   };
 
   /* Initialize a new device service */
@@ -195,15 +192,8 @@ int main (int argc, char *argv[])
     }
   }
 
-  /* Create default Driver config and start the device service */
-  iot_data_t *driver_map = iot_data_alloc_map (IOT_DATA_STRING);
-  iot_data_string_map_add (driver_map, COAP_BIND_ADDR_KEY, iot_data_alloc_string ("0.0.0.0", IOT_DATA_REF));
-  iot_data_string_map_add (driver_map, SECURITY_MODE_KEY, iot_data_alloc_string ("NoSec", IOT_DATA_REF));
-  iot_data_string_map_add (driver_map, PSK_KEY_KEY, iot_data_alloc_string ("", IOT_DATA_REF));
-
-  devsdk_service_start (service, driver_map, &e);
+  devsdk_service_start (service, &e);
   ERR_CHECK (e);
-  iot_data_free (driver_map);
 
   /* Validate transport security mode from config/environment */
   if (impl->security_mode == SECURITY_MODE_UNKNOWN) {
